@@ -40,6 +40,18 @@ export const neteaseResolver: PlatformResolver = {
     }
 
     const params = getMergedSearchParams(targetUrl);
+    const pageId = params.get("id");
+    const isUserHome = targetUrl.includes("/user/home");
+
+    if (isUserHome && pageId) {
+      return buildResult({
+        userId: pageId,
+        targetUrl,
+        source: "userid",
+        algorithm: "链接里直接带着",
+      });
+    }
+
     const userid = params.get("userid");
 
     if (userid) {

@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { Check, ExternalLink, UserRound } from "lucide-react";
 import type { ResolveResult } from "@/lib/platforms";
 
 interface ResultViewProps {
@@ -9,31 +9,42 @@ interface ResultViewProps {
 export function ResultView({ result, error }: ResultViewProps) {
   if (error) {
     return (
-      <section className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-        <h2 className="text-base font-semibold text-red-950">没有找到</h2>
-        <p className="mt-2">{error}</p>
+      <section className="rounded-3xl border border-red-100 bg-white/92 p-6 text-base text-red-800 shadow-[0_18px_50px_rgba(239,68,68,0.12)]">
+        <h2 className="text-2xl font-bold text-red-950">没有找到</h2>
+        <p className="mt-3 leading-7">{error}</p>
       </section>
     );
   }
 
   if (!result) {
     return (
-      <section className="rounded-md border border-dashed border-neutral-300 bg-white/70 p-4 text-sm text-neutral-500">
-        <h2 className="text-base font-semibold text-neutral-900">等待查找</h2>
-        <p className="mt-2">找到后会在这里显示分享者信息。</p>
+      <section className="rounded-3xl border border-dashed border-red-100 bg-white/70 p-6 text-base text-neutral-500 shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+        <h2 className="text-2xl font-bold text-neutral-950">等待查找</h2>
+        <p className="mt-3 leading-7">找到后会在这里显示用户主页。</p>
       </section>
     );
   }
 
   return (
-    <section className="space-y-4 rounded-md border border-red-200 bg-white p-4 shadow-sm">
-      <div>
-        <h2 className="text-base font-semibold text-neutral-950">用户主页</h2>
+    <section className="space-y-7 rounded-3xl border border-red-100 bg-white/92 p-7 shadow-[0_24px_70px_rgba(239,68,68,0.14)]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="flex size-14 items-center justify-center rounded-full bg-red-50 text-red-500">
+            <UserRound className="size-7" aria-hidden="true" />
+          </span>
+          <h2 className="text-3xl font-bold text-neutral-950">用户主页</h2>
+        </div>
+        <span className="flex size-14 items-center justify-center rounded-full bg-red-50 text-red-500">
+          <Check className="size-7" aria-hidden="true" />
+        </span>
+      </div>
+
+      <div className="border-t border-dashed border-red-100 pt-5">
         <a
           href={result.profileUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-2 block break-all text-sm font-medium text-red-700 underline-offset-4 hover:underline"
+          className="block break-all text-xl font-medium leading-8 text-red-600 underline-offset-4 hover:underline"
         >
           {result.profileUrl}
         </a>
@@ -44,10 +55,10 @@ export function ResultView({ result, error }: ResultViewProps) {
           href={result.profileUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 text-sm font-medium text-white transition hover:bg-neutral-800"
+          className="inline-flex h-16 items-center justify-center gap-3 rounded-2xl bg-neutral-950 px-7 text-xl font-bold text-white shadow-[0_16px_34px_rgba(15,23,42,0.22)] transition hover:bg-neutral-800"
           title="打开链接"
         >
-          <ExternalLink className="size-4" aria-hidden="true" />
+          <ExternalLink className="size-6" aria-hidden="true" />
           打开链接
         </a>
       </div>
