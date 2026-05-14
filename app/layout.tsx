@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "找到分享者主页",
+  title: "FindYou",
   description: "粘贴网易云音乐分享链接，找到分享者主页",
 };
 
