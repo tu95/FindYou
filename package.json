@@ -2,6 +2,26 @@
   "name": "find-your-netease-cloud-music",
   "version": "0.1.0",
   "private": true,
+  "description": "开源的网易云音乐分享链接 UID 解析工具，用于从 NetEase Cloud Music share link 中找到分享者主页。",
+  "homepage": "https://github.com/tu95/findYourNetEaseCloudMusic#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu95/findYourNetEaseCloudMusic.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "netease-cloud-music",
+    "netease-music",
+    "netease",
+    "cloud-music",
+    "share-link",
+    "uid",
+    "uct2",
+    "link-resolver",
+    "music-share",
+    "nextjs",
+    "typescript"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

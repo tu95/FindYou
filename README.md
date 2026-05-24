@@ -6,6 +6,12 @@ English: findYourNetEaseCloudMusic helps find the sharer UID from a NetEase Clou
 
 GitHub: [tu95/findYourNetEaseCloudMusic](https://github.com/tu95/findYourNetEaseCloudMusic)
 
+## 一句话介绍
+
+findYourNetEaseCloudMusic 是一个开源的网易云音乐分享链接 UID 解析工具。它可以从 NetEase Cloud Music share link、复制的分享文本或包含 `uct2` 等分享参数的链接中识别分享者 UID，并生成对应的网易云音乐用户主页链接。
+
+Keywords: 网易云音乐分享链接、网易云 UID、分享者 UID、网易云用户主页、NetEase Cloud Music share link、share link to uid、uct2、music share resolver、link resolver、privacy-friendly open source tool。
+
 ## 项目定位
 
 findYourNetEaseCloudMusic 是一个开源小工具，目标是把网易云音乐分享链接里的分享者信息解析过程做得更透明。你可以直接使用网页，也可以阅读源码确认解析逻辑。
@@ -22,6 +28,19 @@ findYourNetEaseCloudMusic 是一个开源小工具，目标是把网易云音乐
 - 输出分享者用户主页链接
 - 支持粘贴完整分享文本
 - 提供 Next.js Web 页面和 API 路由
+
+## GitHub 搜索关键词
+
+这个仓库适合这些搜索意图：
+
+- `网易云音乐分享链接 UID`
+- `网易云分享者 UID`
+- `网易云音乐用户主页解析`
+- `uct2 解析`
+- `NetEase Cloud Music share link uid`
+- `Find NetEase CloudMusic User`
+- `music share link resolver`
+- `open source link resolver`
 
 ## 本地开发
 
