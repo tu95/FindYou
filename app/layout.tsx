@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 import "./globals.css";
 
-const pageTitle = `${siteConfig.shortName} - 网易云音乐分享链接 UID 解析工具`;
+const pageTitle = `${siteConfig.shortName} - 网易云音乐分享链接查 UID，找到分享者主页`;
 const ogImage = absoluteUrl("/opengraph-image");
 
 export const metadata: Metadata = {

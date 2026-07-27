@@ -15,8 +15,8 @@ export default function Image() {
       <div
         style={{
           alignItems: "center",
-          background: "#fff8f5",
-          color: "#171717",
+          background: "#faf3e8",
+          color: "#000000",
           display: "flex",
           height: "100%",
           justifyContent: "center",
@@ -26,8 +26,10 @@ export default function Image() {
       >
         <div
           style={{
-            border: "6px solid #ef4444",
+            background: "#ffffff",
+            border: "6px solid #000000",
             borderRadius: 40,
+            boxShadow: "16px 16px 0 #F7C548",
             display: "flex",
             flexDirection: "column",
             gap: 28,
@@ -35,13 +37,24 @@ export default function Image() {
             width: "100%",
           }}
         >
-          <div style={{ color: "#ef4444", fontSize: 40, fontWeight: 800 }}>
+          <div
+            style={{
+              alignSelf: "flex-start",
+              background: "#FF8FD4",
+              border: "5px solid #000000",
+              boxShadow: "8px 8px 0 #000000",
+              display: "flex",
+              fontSize: 40,
+              fontWeight: 800,
+              padding: "8px 28px",
+            }}
+          >
             {siteConfig.shortName}
           </div>
           <div style={{ fontSize: 82, fontWeight: 900, lineHeight: 1.08 }}>
             网易云分享链接查 UID
           </div>
-          <div style={{ color: "#525252", fontSize: 34, lineHeight: 1.45 }}>
+          <div style={{ color: "#333333", fontSize: 34, lineHeight: 1.45 }}>
             粘贴分享链接，解析分享者 UID，并打开对应用户主页。
           </div>
         </div>

@@ -1,27 +1,34 @@
 // 站点信息集中放这里，避免页面和 sitemap 写散。
 export const siteConfig = {
-  name: "findYourNetEaseCloudMusic",
-  shortName: "findYourNetEaseCloudMusic",
-  englishName: "findYourNetEaseCloudMusic",
+  name: "FindYou",
+  shortName: "FindYou",
+  englishName: "FindYou",
+  // 仓库名保留全称，站点品牌统一叫 FindYou
+  repoName: "findYourNetEaseCloudMusic",
   description:
-    "开源的网易云音乐分享链接解析工具，用于从分享链接中识别分享者 UID，并跳转到分享者主页。",
+    "FindYou 是开源的网易云音乐分享链接查 UID 工具：粘贴分享链接或分享文本，解析分享者 UID，一键打开对应的网易云用户主页。",
   summary:
-    "findYourNetEaseCloudMusic 是一个开源网页工具，用于解析网易云音乐分享文本或分享链接中的分享者 UID，并生成对应的网易云音乐用户主页链接。它适合在你已经拿到公开分享链接、想确认分享来源时使用；项目强调透明实现、少收集信息和可审计源码。",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://findyourneteasecloudmusic.vercel.app",
-  updatedAt: "2026-05-24",
+    "FindYou（项目名 findYourNetEaseCloudMusic）是一个开源网页工具，用于解析网易云音乐分享文本或分享链接中的分享者 UID，并生成对应的网易云音乐用户主页链接。它适合在你已经拿到公开分享链接、想确认分享来源时使用；项目强调透明实现、少收集信息和可审计源码。",
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://findyou.uk",
+  updatedAt: "2026-07-27",
   author: {
     name: "tu95",
     url: "https://github.com/tu95",
   },
   keywords: [
+    "FindYou",
+    "findyou.uk",
     "网易云音乐分享链接",
+    "网易云分享链接查 UID",
     "网易云 UID",
     "网易云分享者",
     "网易云用户主页",
+    "网易云分享链接解析",
     "uct2",
     "NetEase Cloud Music",
     "share link to uid",
     "Find NetEase CloudMusic User",
+    "findYourNetEaseCloudMusic",
   ],
   github: "https://github.com/tu95/findYourNetEaseCloudMusic",
   references: [

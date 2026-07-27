@@ -65,7 +65,7 @@ export function DecoderShell() {
             </span>
           </div>
           <div className="min-w-0">
-            <p className="break-words font-mono text-lg font-bold leading-tight text-black sm:text-2xl">
+            <p className="break-words font-mono text-2xl font-bold leading-tight text-black sm:text-3xl">
               {siteConfig.shortName}
             </p>
             <p className="mt-1.5 inline-block bg-black px-2 py-0.5 font-mono text-xs font-bold tracking-[0.2em] text-[#F7C548] sm:text-sm">
@@ -136,7 +136,7 @@ export function DecoderShell() {
           <div className="space-y-6">
             <section className="border-t-[3px] border-black pt-6">
               <h2 className="text-xl font-black text-black sm:text-2xl">
-                findYourNetEaseCloudMusic 是什么？
+                FindYou 是什么？
               </h2>
               <p className="mt-4 text-sm leading-7 text-black/75 sm:text-base sm:leading-8">
                 {siteConfig.summary}
