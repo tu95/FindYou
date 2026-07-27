@@ -10,17 +10,19 @@ interface LinkInputProps {
 export function LinkInput({ value, loading, onChange, onSubmit }: LinkInputProps) {
   return (
     <form
-      className="space-y-3"
+      className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();
       }}
     >
       <label
-        className="flex items-center gap-2 text-xl font-bold text-neutral-950"
+        className="flex items-center gap-2.5 text-lg font-black text-black sm:text-xl"
         htmlFor="share-link"
       >
-        <Link2 className="size-6 text-red-500" aria-hidden="true" />
+        <span className="flex size-8 items-center justify-center border-2 border-black bg-[#F7C548] shadow-[3px_3px_0_#000]">
+          <Link2 className="size-4" aria-hidden="true" />
+        </span>
         分享链接
       </label>
       <textarea
@@ -28,20 +30,19 @@ export function LinkInput({ value, loading, onChange, onSubmit }: LinkInputProps
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="粘贴网易云音乐分享链接"
-        className="min-h-48 w-full resize-y rounded-3xl border border-red-100 bg-white/92 px-6 py-5 text-lg leading-9 text-neutral-950 shadow-[0_18px_50px_rgba(15,23,42,0.08)] outline-none transition placeholder:text-neutral-400 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+        className="min-h-36 w-full resize-y border-[3px] border-black bg-white px-4 py-4 font-mono text-base leading-7 text-black shadow-[6px_6px_0_#000] outline-none transition placeholder:text-neutral-400 focus:shadow-[6px_6px_0_#FF8FD4] sm:min-h-44 sm:px-6 sm:py-5 sm:text-lg sm:leading-8"
       />
       <button
         type="submit"
         disabled={loading}
-        className="group relative inline-flex h-20 w-full items-center justify-center gap-4 overflow-hidden rounded-[2rem] bg-gradient-to-r from-red-500 via-red-600 to-red-500 px-6 text-3xl font-bold text-white shadow-[0_20px_45px_rgba(239,68,68,0.28)] transition hover:scale-[1.01] hover:shadow-[0_24px_55px_rgba(239,68,68,0.34)] disabled:cursor-not-allowed disabled:from-neutral-400 disabled:to-neutral-400"
+        className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-[40px] border-[3px] border-black bg-[#FF8FD4] px-6 text-xl font-black text-black shadow-[6px_6px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[8px_8px_0_#000] active:translate-x-1 active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:bg-neutral-300 sm:h-16 sm:text-2xl"
       >
-        <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.4),transparent_18%),radial-gradient(circle_at_82%_65%,rgba(255,255,255,0.28),transparent_16%)] opacity-70" />
         {loading ? (
-          <LoaderCircle className="relative size-9 animate-spin" aria-hidden="true" />
+          <LoaderCircle className="size-6 animate-spin sm:size-7" aria-hidden="true" />
         ) : (
-          <Search className="relative size-9" aria-hidden="true" />
+          <Search className="size-6 sm:size-7" aria-hidden="true" />
         )}
-        <span className="relative">{loading ? "查找中" : "查找"}</span>
+        <span>{loading ? "查找中" : "查找"}</span>
       </button>
     </form>
   );

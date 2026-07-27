@@ -9,42 +9,48 @@ interface ResultViewProps {
 export function ResultView({ result, error }: ResultViewProps) {
   if (error) {
     return (
-      <section className="rounded-3xl border border-red-100 bg-white/92 p-6 text-base text-red-800 shadow-[0_18px_50px_rgba(239,68,68,0.12)]">
-        <h2 className="text-2xl font-bold text-red-950">没有找到</h2>
-        <p className="mt-3 leading-7">{error}</p>
+      <section className="border-[3px] border-black bg-[#F7C548] p-5 shadow-[6px_6px_0_#000] sm:p-6">
+        <h2 className="inline-block bg-black px-2.5 py-0.5 text-xl font-black text-[#F7C548] sm:text-2xl">
+          没有找到
+        </h2>
+        <p className="mt-3 text-sm font-bold leading-6 text-black sm:text-base sm:leading-7">
+          {error}
+        </p>
       </section>
     );
   }
 
   if (!result) {
     return (
-      <section className="rounded-3xl border border-dashed border-red-100 bg-white/70 p-6 text-base text-neutral-500 shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
-        <h2 className="text-2xl font-bold text-neutral-950">等待查找</h2>
-        <p className="mt-3 leading-7">找到后会在这里显示用户主页。</p>
+      <section className="border-[3px] border-dashed border-black bg-white/60 p-5 sm:p-6">
+        <h2 className="font-mono text-lg font-bold text-black sm:text-xl">等待查找…</h2>
+        <p className="mt-2 text-sm leading-6 text-black/60 sm:text-base sm:leading-7">
+          找到后会在这里显示用户主页。
+        </p>
       </section>
     );
   }
 
   return (
-    <section className="space-y-7 rounded-3xl border border-red-100 bg-white/92 p-7 shadow-[0_24px_70px_rgba(239,68,68,0.14)]">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <span className="flex size-14 items-center justify-center rounded-full bg-red-50 text-red-500">
-            <UserRound className="size-7" aria-hidden="true" />
+    <section className="space-y-5 rounded-[40px] border-[3px] border-black bg-white p-5 shadow-[8px_8px_0_#FF8FD4] sm:space-y-6 sm:p-7">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-black bg-[#FF8FD4] sm:size-14">
+            <UserRound className="size-5 sm:size-7" aria-hidden="true" />
           </span>
-          <h2 className="text-3xl font-bold text-neutral-950">用户主页</h2>
+          <h2 className="text-2xl font-black text-black sm:text-3xl">用户主页</h2>
         </div>
-        <span className="flex size-14 items-center justify-center rounded-full bg-red-50 text-red-500">
-          <Check className="size-7" aria-hidden="true" />
+        <span className="flex size-11 shrink-0 items-center justify-center border-2 border-black bg-[#F7C548] shadow-[3px_3px_0_#000] sm:size-14">
+          <Check className="size-5 sm:size-7" aria-hidden="true" />
         </span>
       </div>
 
-      <div className="border-t border-dashed border-red-100 pt-5">
+      <div className="border-t-[3px] border-dashed border-black pt-4 sm:pt-5">
         <a
           href={result.profileUrl}
           target="_blank"
           rel="noreferrer"
-          className="block break-all text-xl font-medium leading-8 text-red-600 underline-offset-4 hover:underline"
+          className="block break-all font-mono text-sm font-bold leading-6 text-black underline decoration-[#FF8FD4] decoration-[3px] underline-offset-4 hover:decoration-black sm:text-lg sm:leading-8"
         >
           {result.profileUrl}
         </a>
@@ -55,10 +61,10 @@ export function ResultView({ result, error }: ResultViewProps) {
           href={result.profileUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-16 items-center justify-center gap-3 rounded-2xl bg-neutral-950 px-7 text-xl font-bold text-white shadow-[0_16px_34px_rgba(15,23,42,0.22)] transition hover:bg-neutral-800"
+          className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-[40px] border-[3px] border-black bg-black px-6 text-lg font-black text-white shadow-[5px_5px_0_#F7C548] transition-all hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#F7C548] active:translate-x-1 active:translate-y-1 active:shadow-none sm:h-16 sm:w-auto sm:px-8 sm:text-xl"
           title="打开链接"
         >
-          <ExternalLink className="size-6" aria-hidden="true" />
+          <ExternalLink className="size-5 sm:size-6" aria-hidden="true" />
           打开链接
         </a>
       </div>
