@@ -25,7 +25,7 @@ export function ResultView({ result, error }: ResultViewProps) {
       <section className="border-[3px] border-dashed border-black bg-white/60 p-5 sm:p-6">
         <h2 className="font-mono text-lg font-bold text-black sm:text-xl">等待查找…</h2>
         <p className="mt-2 text-sm leading-6 text-black/60 sm:text-base sm:leading-7">
-          找到后会在这里显示用户主页。
+          把链接贴到上面，点“查找”，结果就会出现在这里。
         </p>
       </section>
     );
@@ -38,7 +38,7 @@ export function ResultView({ result, error }: ResultViewProps) {
           <span className="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-black bg-[#FF8FD4] sm:size-14">
             <UserRound className="size-5 sm:size-7" aria-hidden="true" />
           </span>
-          <h2 className="text-2xl font-black text-black sm:text-3xl">用户主页</h2>
+          <h2 className="text-2xl font-black text-black sm:text-3xl">找到了！</h2>
         </div>
         <span className="flex size-11 shrink-0 items-center justify-center border-2 border-black bg-[#F7C548] shadow-[3px_3px_0_#000] sm:size-14">
           <Check className="size-5 sm:size-7" aria-hidden="true" />
@@ -62,10 +62,10 @@ export function ResultView({ result, error }: ResultViewProps) {
           target="_blank"
           rel="noreferrer"
           className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-[40px] border-[3px] border-black bg-black px-6 text-lg font-black text-white shadow-[5px_5px_0_#F7C548] transition-all hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#F7C548] active:translate-x-1 active:translate-y-1 active:shadow-none sm:h-16 sm:w-auto sm:px-8 sm:text-xl"
-          title="打开链接"
+          title="打开对方的网易云主页"
         >
           <ExternalLink className="size-5 sm:size-6" aria-hidden="true" />
-          打开链接
+          打开对方的主页
         </a>
       </div>
     </section>

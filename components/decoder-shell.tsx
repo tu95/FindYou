@@ -69,7 +69,7 @@ export function DecoderShell() {
               {siteConfig.shortName}
             </p>
             <p className="mt-1.5 inline-block bg-black px-2 py-0.5 font-mono text-xs font-bold tracking-[0.2em] text-[#F7C548] sm:text-sm">
-              一键追踪分享者
+              一键找到分享的人
             </p>
           </div>
         </div>
@@ -78,11 +78,11 @@ export function DecoderShell() {
           <h1 className="text-4xl font-black leading-snug tracking-tight text-black sm:text-6xl">
             网易云分享链接{" "}
             <span className="inline-block -rotate-1 border-[3px] border-black bg-[#FF8FD4] px-3 py-0.5 shadow-[5px_5px_0_#000]">
-              查 UID
+              是谁发的？
             </span>
           </h1>
           <p className="mt-5 text-base font-medium leading-7 text-black/70 sm:mt-6 sm:text-xl sm:leading-8">
-            粘贴网易云音乐分享链接，解析分享者 UID，并打开对应用户主页。
+            把分享链接粘贴进来，马上查出是谁分享的，一键打开对方的网易云主页。
           </p>
           <div className="mt-6 flex gap-2 sm:mt-8" aria-hidden="true">
             <span className="h-3 w-14 bg-black" />
@@ -104,11 +104,11 @@ export function DecoderShell() {
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-black bg-[#F7C548]">
                 <ShieldCheck className="size-5" aria-hidden="true" />
               </span>
-              <h2 className="text-xl font-black text-black sm:text-2xl">开源、透明、少打扰</h2>
+              <h2 className="text-xl font-black text-black sm:text-2xl">免费、开源、不存记录</h2>
             </div>
             <p className="mt-4 text-sm leading-7 text-black/75 sm:text-base sm:leading-8">
-              这是一个开源的网易云音乐分享链接解析工具，目标是把分享链接里的分享者信息讲清楚，
-              方便查看 UID 和用户主页。项目会尽量保持解析过程透明，也欢迎继续补充不同平台的逆向分析。
+              这个工具完全免费，你贴进来的链接只用来查这一次，不会被保存。
+              想知道它是怎么做到的？所有代码都公开在 GitHub 上，懂技术的朋友可以直接看。
             </p>
             <a
               href={siteConfig.github}
@@ -117,7 +117,7 @@ export function DecoderShell() {
               className="mt-5 inline-flex items-center gap-2 border-2 border-black bg-[#FF8FD4] px-4 py-2 font-mono text-sm font-bold text-black shadow-[4px_4px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none sm:text-base"
             >
               <Code2 className="size-5" aria-hidden="true" />
-              查看开源仓库
+              GitHub 源代码
             </a>
           </div>
 
@@ -144,26 +144,16 @@ export function DecoderShell() {
             </section>
 
             <section className="border-t-[3px] border-black pt-6">
-              <h2 className="text-xl font-black text-black sm:text-2xl">它怎么解析分享者 UID？</h2>
+              <h2 className="text-xl font-black text-black sm:text-2xl">为什么有时候查不到？</h2>
               <p className="mt-4 text-sm leading-7 text-black/75 sm:text-base sm:leading-8">
-                页面会从你粘贴的网易云音乐分享内容里提取链接和分享参数，把这些公开参数交给解析接口处理。
-                如果链接里包含可识别的分享者信息，工具会返回分享者 UID 对应的网易云音乐用户主页。
-                解析逻辑放在开源仓库里，方便检查输入、输出和失败原因。
+                多半是分享内容复制得不完整，或者这条链接本身没带分享者信息。
+                回到网易云重新点分享、复制整段内容再试一次，大多数情况就能查到了。
+                还是不行的话，欢迎到 GitHub 上把链接样例发给我们。
               </p>
             </section>
 
-            <section className="border-t-[3px] border-black pt-6">
-              <h2 className="text-xl font-black text-black sm:text-2xl">为什么有些链接解析失败？</h2>
-              <p className="mt-4 text-sm leading-7 text-black/75 sm:text-base sm:leading-8">
-                常见原因包括分享文本不完整、分享参数被平台改写、链接来自暂未兼容的客户端版本，
-                或者目标内容本身没有携带可解析的分享者字段。遇到失败时，可以复制完整分享文案再试，
-                也可以到开源仓库提交样例，帮助补充更多平台版本的兼容逻辑。
-              </p>
-            </section>
-
-            <section className="border-t-[3px] border-black pt-6">
-              <h2 className="text-xl font-black text-black sm:text-2xl">机器可读入口</h2>
-              <div className="mt-4 flex flex-wrap gap-3">
+            <footer className="border-t-[3px] border-black pt-6">
+              <div className="flex flex-wrap items-center gap-3">
                 {[
                   ["llms.txt", "/llms.txt"],
                   ["sitemap.xml", "/sitemap.xml"],
@@ -178,11 +168,10 @@ export function DecoderShell() {
                   </a>
                 ))}
               </div>
-              <p className="mt-4 font-mono text-xs leading-6 text-black/60 sm:text-sm">
-                AI 搜索和传统爬虫可以从这些入口读取站点摘要、抓取规则和可索引页面。
-                当前规范站点地址是 {absoluteUrl("/")}。
+              <p className="mt-3 font-mono text-xs leading-6 text-black/50">
+                上面这些是给搜索引擎和 AI 看的，普通用户不用管。{absoluteUrl("/")}
               </p>
-            </section>
+            </footer>
           </div>
         </section>
       </section>

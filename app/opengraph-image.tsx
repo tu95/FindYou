@@ -52,10 +52,10 @@ export default function Image() {
             {siteConfig.shortName}
           </div>
           <div style={{ fontSize: 82, fontWeight: 900, lineHeight: 1.08 }}>
-            网易云分享链接查 UID
+            网易云分享链接，是谁发的？
           </div>
           <div style={{ color: "#333333", fontSize: 34, lineHeight: 1.45 }}>
-            粘贴分享链接，解析分享者 UID，并打开对应用户主页。
+            粘贴分享链接，查出是谁分享的，一键打开对方主页。
           </div>
         </div>
       </div>

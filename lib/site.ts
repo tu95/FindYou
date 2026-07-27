@@ -6,9 +6,9 @@ export const siteConfig = {
   // 仓库名保留全称，站点品牌统一叫 FindYou
   repoName: "findYourNetEaseCloudMusic",
   description:
-    "FindYou 是开源的网易云音乐分享链接查 UID 工具：粘贴分享链接或分享文本，解析分享者 UID，一键打开对应的网易云用户主页。",
+    "FindYou：把网易云音乐分享链接粘贴进来，就能查出这条链接是谁分享的，一键打开对方的网易云主页。免费、开源、不存记录。",
   summary:
-    "FindYou（项目名 findYourNetEaseCloudMusic）是一个开源网页工具，用于解析网易云音乐分享文本或分享链接中的分享者 UID，并生成对应的网易云音乐用户主页链接。它适合在你已经拿到公开分享链接、想确认分享来源时使用；项目强调透明实现、少收集信息和可审计源码。",
+    "FindYou（项目名 findYourNetEaseCloudMusic）是一个免费的开源小工具：把网易云音乐的分享链接或整段分享文字粘贴进来，它就能查出这条链接是谁分享的，并帮你打开对方的网易云主页。不用注册、不用下载，也不保存你的查询记录。",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://findyou.uk",
   updatedAt: "2026-07-27",
   author: {
@@ -40,19 +40,19 @@ export const siteConfig = {
   faqs: [
     {
       question: "这个工具能做什么？",
-      answer: "从网易云音乐分享链接中解析分享者 UID，并生成对应的用户主页链接。",
+      answer: "粘贴网易云的分享链接，就能查出是谁分享的，并打开对方的网易云主页。",
     },
     {
-      question: "支持哪些输入？",
-      answer: "支持包含网易云音乐分享参数的链接或分享文本，复制整段分享内容也可以尝试。",
+      question: "怎么用？",
+      answer: "在网易云 App 里点分享、复制链接，把复制到的内容整段粘贴进来，点查找就行。",
     },
     {
       question: "会保存我的链接吗？",
-      answer: "当前页面只把链接提交给解析接口返回结果，不展示历史记录，也不提供用户数据存储功能。",
+      answer: "不会。查完就完了，没有历史记录，也不用登录。",
     },
     {
-      question: "为什么要开源？",
-      answer: "这类工具涉及链接解析和隐私边界，开源能让实现过程更容易被检查和改进。",
+      question: "查出来的结果准吗？",
+      answer: "只要链接里带了分享者信息就能查到；查不到时换一条完整的分享内容再试试。",
     },
   ],
 } as const;
