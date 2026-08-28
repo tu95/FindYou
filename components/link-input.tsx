@@ -29,7 +29,7 @@ export function LinkInput({ value, loading, onChange, onSubmit }: LinkInputProps
         id="share-link"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="把网易云、小红书的分享链接或整段分享文字贴到这里"
+        placeholder="把网易云、小红书、抖音的分享链接或整段分享文字贴到这里"
         className="min-h-36 w-full resize-y border-[3px] border-black bg-white px-4 py-4 font-mono text-base leading-7 text-black shadow-[6px_6px_0_#000] outline-none transition placeholder:text-neutral-400 focus:shadow-[6px_6px_0_#FF8FD4] sm:min-h-44 sm:px-6 sm:py-5 sm:text-lg sm:leading-8"
       />
       <button

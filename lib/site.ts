@@ -6,14 +6,13 @@ export const siteConfig = {
   // 仓库名保留全称，站点品牌统一叫 FindYou
   repoName: "findYourNetEaseCloudMusic",
   description:
-    "FindYou：把网易云音乐、小红书的分享链接粘贴进来，就能查出这条链接是谁分享的，一键打开对方主页。免费、开源、不存记录。",
+    "FindYou：把网易云音乐、小红书、抖音的分享链接粘贴进来，就能查出这条链接是谁分享的，一键打开对方主页。免费、不存记录。",
   summary:
-    "FindYou（项目名 findYourNetEaseCloudMusic）是一个免费的开源小工具：把网易云音乐、小红书的分享链接或整段分享文字粘贴进来，它就能查出这条链接是谁分享的，并帮你打开对方主页。不用注册、不用下载，也不保存你的查询记录。",
+    "FindYou（项目名 findYourNetEaseCloudMusic）是一个免费的小工具：把网易云音乐、小红书、抖音的分享链接或整段分享文字粘贴进来，它就能查出这条链接是谁分享的，并帮你打开对方主页。不用注册、不用下载，也不保存你的查询记录。",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://findyou.uk",
   updatedAt: "2026-08-28",
   author: {
     name: "tu95",
-    url: "https://github.com/tu95",
   },
   keywords: [
     "FindYou",
@@ -29,18 +28,21 @@ export const siteConfig = {
     "小红书 shareRedId",
     "小红书分享链接解析",
     "小红书 appuid",
+    "抖音分享链接",
+    "抖音分享者",
+    "抖音 activity_info",
+    "抖音 u_code",
     "uct2",
     "shareRedId",
     "NetEase Cloud Music",
     "Xiaohongshu share link",
+    "Douyin share link",
     "XHS share link resolver",
     "share link to uid",
     "Find NetEase CloudMusic User",
     "findYourNetEaseCloudMusic",
   ],
-  github: "https://github.com/tu95/findYourNetEaseCloudMusic",
   references: [
-    "https://github.com/cwzsquare/netease_music_sharelink2uid",
     "https://me.onlyra1n.top/posts/secret-behind-uct2",
     "https://www.v2ex.com/t/876017",
     "https://ahxxm.com/173.moew/",
@@ -57,6 +59,10 @@ export const siteConfig = {
     {
       question: "小红书链接也能查吗？",
       answer: "能。小红书分享链接里的分享者信息可以在本地直接解开，不需要额外请求任何服务器。",
+    },
+    {
+      question: "抖音链接也能查吗？",
+      answer: "能。抖音新版分享链接的 activity_info 里直接携带分享者 User ID，本地解析即可拿到分享者。",
     },
     {
       question: "会保存我的链接吗？",

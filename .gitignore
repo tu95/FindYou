@@ -7,3 +7,6 @@ coverage/
 *.log
 __pycache__/
 .gstack/
+
+# xhs mini tool package
+xhs_mini_tool.zip

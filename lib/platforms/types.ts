@@ -7,7 +7,12 @@ export type ResolveSource =
   | "shareRedId"
   | "appuid"
   | "web_share"
-  | "user_profile";
+  | "user_profile"
+  | "activity_info"
+  | "uid"
+  | "sec_uid"
+  | "aweme_id"
+  | "video";
 
 export interface ResolveContext {
   resolveShortLink?: (url: string) => Promise<string>;

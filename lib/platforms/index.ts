@@ -2,9 +2,10 @@ import "server-only";
 import { ResolveError } from "@/lib/errors";
 import { neteaseResolver } from "./netease";
 import { xiaohongshuResolver } from "./xiaohongshu";
+import { douyinResolver } from "./douyin";
 import type { ResolveContext, ResolveResult, SanitizeResult } from "./types";
 
-export const platformResolvers = [neteaseResolver, xiaohongshuResolver];
+export const platformResolvers = [neteaseResolver, xiaohongshuResolver, douyinResolver];
 
 export async function resolveShareLink(
   input: string,

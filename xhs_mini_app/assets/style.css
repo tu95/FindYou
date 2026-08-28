@@ -1,0 +1,202 @@
+/* ===== 分享解析小工具 · 样式 ===== */
+
+:root {
+  --xhs: #FF2442; --xhs-dark: #C9182F; --xhs-light: #FFF0F2;
+  --net: #D43C33; --net-dark: #A82E27; --net-light: #FDEFED;
+  --bg: #F5F5F7; --card: #FFFFFF; --text: #1F2329; --sub: #8A9099;
+  --border: #ECECF0;
+}
+
+html { touch-action: manipulation; }
+
+body { background: var(--bg); }
+
+.page {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
+
+/* ---------- 头部 ---------- */
+
+.app-header { text-align: center; padding: 8px 0 2px; }
+.app-logo { font-size: 38px; line-height: 1; }
+.app-title { font-size: 20px; font-weight: 700; margin-top: 8px; letter-spacing: 0.5px; }
+.app-sub { font-size: 12px; color: var(--sub); margin-top: 5px; }
+
+/* ---------- 标签页 ---------- */
+
+.tabs {
+  display: flex;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 4px;
+  margin: 18px 0 14px;
+  box-shadow: 0 2px 12px rgba(31, 35, 41, 0.05);
+}
+.tab {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 11px 0;
+  border-radius: 11px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sub);
+  font-family: inherit;
+}
+.tab.is-active { color: #FFFFFF; }
+#tabs[data-active="xhs"] .tab.is-active { background: var(--xhs); }
+#tabs[data-active="netease"] .tab.is-active { background: var(--net); }
+
+/* ---------- 卡片 ---------- */
+
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 12px rgba(31, 35, 41, 0.05);
+}
+.card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.card-title .history-count { font-size: 12px; color: var(--sub); font-weight: 400; }
+
+/* ---------- 输入 ---------- */
+
+.input {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: inherit;
+  color: var(--text);
+  background: #FAFAFB;
+  resize: vertical;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.input:focus { outline: none; border-color: var(--xhs); background: #FFFFFF; }
+
+/* ---------- 按钮 ---------- */
+
+.btn-row { display: flex; gap: 10px; margin-top: 12px; }
+.btn {
+  flex: 1;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+}
+.btn:active { opacity: 0.75; }
+.btn-xhs { background: var(--xhs); color: #FFFFFF; }
+.btn-net { background: var(--net); color: #FFFFFF; }
+.btn-ghost { background: #F2F3F5; color: var(--text); }
+.btn-block { width: 100%; flex: none; margin-top: 10px; }
+
+/* ---------- 示例 chips ---------- */
+
+.samples { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sample-label { font-size: 12px; color: var(--sub); }
+.chip {
+  border: 1px solid var(--border);
+  background: #FFFFFF;
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 12px;
+  color: var(--sub);
+  font-family: inherit;
+}
+.chip:active { background: #F2F3F5; }
+
+/* ---------- 解析结果 ---------- */
+
+.result { padding-top: 14px; }
+.result-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.result-time { font-size: 12px; color: var(--sub); }
+
+.field {
+  display: flex;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.field:last-of-type { border-bottom: 0; }
+.field-label { flex: 0 0 72px; color: var(--sub); font-size: 13px; padding-top: 1px; }
+.field-value { flex: 1; min-width: 0; word-break: break-all; }
+
+code {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  background: #F5F5F7;
+  padding: 2px 6px;
+  border-radius: 6px;
+  word-break: break-all;
+}
+.link { color: var(--xhs); word-break: break-all; }
+.result[data-platform="netease"] .link { color: var(--net); }
+.result[data-platform="netease"] code { background: var(--net-light); }
+
+.selectable, .link { -webkit-user-select: text; user-select: text; }
+
+.result-actions { display: flex; gap: 10px; margin-top: 12px; }
+.result-actions .btn { flex: 1; padding: 10px 0; font-size: 14px; }
+
+.tip { font-size: 12px; color: var(--sub); margin-top: 10px; line-height: 1.6; }
+.empty { color: var(--sub); font-size: 14px; text-align: center; padding: 18px 8px; line-height: 1.7; }
+
+/* ---------- 分享卡片预览 ---------- */
+
+.card-img-wrap { border-radius: 12px; overflow: hidden; background: #000; }
+.card-img-wrap img { display: block; width: 100%; }
+
+/* ---------- 历史 ---------- */
+
+.history-card { padding-top: 14px; }
+.hist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: #FAFAFB;
+  border-radius: 12px;
+  padding: 11px 12px;
+  margin-bottom: 8px;
+  font-family: inherit;
+  text-align: left;
+}
+.hist-row:active { background: #F0F1F3; }
+.hist-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.hist-main {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hist-time { flex: none; font-size: 11px; color: var(--sub); }
+
+/* ---------- 页脚 ---------- */
+
+.app-footer {
+  text-align: center;
+  font-size: 11px;
+  color: #B9BDC4;
+  padding: 10px 0 4px;
+  letter-spacing: 0.5px;
+}

@@ -9,7 +9,6 @@ export default function Page() {
         "@type": "Person",
         "@id": absoluteUrl("/#author"),
         name: siteConfig.author.name,
-        url: siteConfig.author.url,
       },
       {
         "@type": "WebSite",
@@ -39,9 +38,8 @@ export default function Page() {
         author: {
           "@id": absoluteUrl("/#author"),
         },
-        codeRepository: siteConfig.github,
         dateModified: siteConfig.updatedAt,
-        sameAs: [siteConfig.github, ...siteConfig.references],
+        sameAs: [...siteConfig.references],
         offers: {
           "@type": "Offer",
           price: "0",

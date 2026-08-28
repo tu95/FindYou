@@ -18,33 +18,23 @@ function formatShareTime(seconds?: number) {
   });
 }
 
-// linkType 机器值 -> 给人看的中文标签
-const LINK_TYPE_LABELS: Record<string, string> = {
-  short_link: "短链",
-  user_profile: "用户主页",
-  app_share_encrypted: "App",
-  app_share_plain: "App",
-  web_share: "网页/PC 分享",
-  other: "其他",
+const OPEN_CONTENT_LABEL: Record<string, string> = {
+  douyin: "打开视频",
 };
 
 function DetailRows({ result }: { result: ResolveResult }) {
   const rows: Array<[string, React.ReactNode]> = [];
 
-  if (result.linkType) {
-    rows.push(["链接类型", LINK_TYPE_LABELS[result.linkType] ?? result.linkType]);
-  }
-
   rows.push([
     "分享者 ID",
     result.userId ?? (
-      <span className="text-black/60">—（网页/PC 分享链接不含 shareRedId/appuid，无法获取）</span>
+      <span className="text-black/60">
+        {result.platformId === "douyin"
+          ? "—（这条抖音分享链接不含分享者信息，只能获取视频作者）"
+          : "—（网页/PC 分享链接不含 shareRedId/appuid，无法获取）"}
+      </span>
     ),
   ]);
-
-  if (result.shareChannel) {
-    rows.push(["分享渠道", result.shareChannel]);
-  }
 
   if (result.shareTime) {
     rows.push(["分享时间", formatShareTime(result.shareTime)]);
@@ -122,16 +112,17 @@ export function ResultView({ result, error }: ResultViewProps) {
           </p>
         </div>
 
+
         <div className="flex flex-wrap gap-3">
           <a
             href={result.targetUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-[40px] border-[3px] border-black bg-black px-6 text-lg font-black text-white shadow-[5px_5px_0_#4ADE80] transition-all hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#4ADE80] active:translate-x-1 active:translate-y-1 active:shadow-none sm:h-16 sm:w-auto sm:px-8 sm:text-xl"
-            title="打开笔记"
+            title={OPEN_CONTENT_LABEL[result.platformId] ?? "打开笔记"}
           >
             <ExternalLink className="size-5 sm:size-6" aria-hidden="true" />
-            打开笔记
+            {OPEN_CONTENT_LABEL[result.platformId] ?? "打开笔记"}
           </a>
           <CopyButton
             text={result.cleanUrl ?? result.targetUrl}
@@ -177,6 +168,7 @@ export function ResultView({ result, error }: ResultViewProps) {
           </a>
         ) : null}
       </div>
+
 
       {result.profileUrl ? (
         <div className="flex flex-wrap items-center gap-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Code2, Link2, Music2, Radar, ShieldCheck } from "lucide-react";
+import { Link2, Music2, Radar, ShieldCheck } from "lucide-react";
 import { LinkInput } from "./link-input";
 import { ResultView } from "./result-view";
 import type { ResolveResult } from "@/lib/platforms";
@@ -82,7 +82,7 @@ export function DecoderShell() {
             </span>
           </h1>
           <p className="mt-5 text-base font-medium leading-7 text-black/70 sm:mt-6 sm:text-xl sm:leading-8">
-            支持网易云音乐、小红书：把分享链接或整段分享文字粘贴进来，马上查出是谁分享的，一键打开对方主页。
+            支持网易云音乐、小红书、抖音：把分享链接或整段分享文字粘贴进来，马上查出是谁分享的，一键打开对方主页。
           </p>
           <div className="mt-6 flex gap-2 sm:mt-8" aria-hidden="true">
             <span className="h-3 w-14 bg-black" />
@@ -104,21 +104,11 @@ export function DecoderShell() {
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-black bg-[#F7C548]">
                 <ShieldCheck className="size-5" aria-hidden="true" />
               </span>
-              <h2 className="text-xl font-black text-black sm:text-2xl">免费、开源、不存记录</h2>
+              <h2 className="text-xl font-black text-black sm:text-2xl">免费、不存记录</h2>
             </div>
             <p className="mt-4 text-sm leading-7 text-black/75 sm:text-base sm:leading-8">
               这个工具完全免费，你贴进来的链接只用来查这一次，不会被保存。
-              想知道它是怎么做到的？所有代码都公开在 GitHub 上，懂技术的朋友可以直接看。
             </p>
-            <a
-              href={siteConfig.github}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-5 inline-flex items-center gap-2 border-2 border-black bg-[#FF8FD4] px-4 py-2 font-mono text-sm font-bold text-black shadow-[4px_4px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none sm:text-base"
-            >
-              <Code2 className="size-5" aria-hidden="true" />
-              GitHub 源代码
-            </a>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
@@ -149,7 +139,6 @@ export function DecoderShell() {
                 多半是分享内容复制得不完整，或者这条链接本身没带分享者信息
                 （比如网页版的小红书笔记链接只有笔记 ID）。
                 回到 App 重新点分享、复制整段内容再试一次，大多数情况就能查到了。
-                还是不行的话，欢迎到 GitHub 上把链接样例发给我们。
               </p>
             </section>
 
