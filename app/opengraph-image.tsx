@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { siteConfig } from "@/lib/site";
 
-export const alt = `${siteConfig.shortName} 网易云音乐分享链接 UID 解析工具`;
+export const alt = `${siteConfig.shortName} 分享链接分享者解析工具（网易云音乐、小红书）`;
 export const size = {
   width: 1200,
   height: 630,
@@ -52,10 +52,10 @@ export default function Image() {
             {siteConfig.shortName}
           </div>
           <div style={{ fontSize: 82, fontWeight: 900, lineHeight: 1.08 }}>
-            网易云分享链接，是谁发的？
+            分享链接，是谁发的？
           </div>
           <div style={{ color: "#333333", fontSize: 34, lineHeight: 1.45 }}>
-            粘贴分享链接，查出是谁分享的，一键打开对方主页。
+            支持网易云、小红书，粘贴链接查出分享者，一键打开对方主页。
           </div>
         </div>
       </div>

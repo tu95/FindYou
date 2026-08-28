@@ -1,3 +1,4 @@
+import "server-only";
 import CryptoJS from "crypto-js";
 import { ResolveError } from "@/lib/errors";
 import { LEGACY_UCT_KEY, OPENSSL_SALTED_PREFIX, UCT2_KEY } from "./constants";

@@ -1,3 +1,4 @@
+import "server-only";
 import { ResolveError } from "@/lib/errors";
 import { NETEASE_SHORT_HOST } from "./constants";
 
@@ -19,17 +20,37 @@ export function isNeteaseShortLink(input: string) {
   return url.hostname === NETEASE_SHORT_HOST;
 }
 
-export function canHandleNeteaseUrl(input: string) {
+// 分享文本里提取链接：完整链接直接返回；否则在文本里找网易云域名开头的链接，停在中文标点（分享文案常见后缀）。
+const NETEASE_URL_PATTERN =
+  /https?:\/\/(?:music\.163\.com|y\.music\.163\.com|163cn\.tv)\/[^\s，。、；：！？）)」』\]]*/;
+
+export function findNeteaseUrl(input: string): string | null {
+  const trimmed = input.trim();
+
   try {
-    const url = parseNeteaseUrl(input);
-    return (
+    const url = new URL(trimmed);
+    if (
       url.hostname === "music.163.com" ||
       url.hostname === "y.music.163.com" ||
       url.hostname === NETEASE_SHORT_HOST
-    );
+    ) {
+      return url.toString();
+    }
+    return null;
   } catch {
-    return false;
+    // 不是完整链接，继续从分享文本里找
   }
+
+  const match = trimmed.match(NETEASE_URL_PATTERN);
+  if (!match) {
+    return null;
+  }
+
+  return match[0].replace(/[，。、；）)」』\]]+$/, "");
+}
+
+export function canHandleNeteaseUrl(input: string) {
+  return findNeteaseUrl(input) !== null;
 }
 
 export function getMergedSearchParams(input: string) {

@@ -76,13 +76,13 @@ export function DecoderShell() {
 
         <div className="mb-10 sm:mb-14">
           <h1 className="text-4xl font-black leading-snug tracking-tight text-black sm:text-6xl">
-            网易云分享链接{" "}
+            分享链接{" "}
             <span className="inline-block -rotate-1 border-[3px] border-black bg-[#FF8FD4] px-3 py-0.5 shadow-[5px_5px_0_#000]">
               是谁发的？
             </span>
           </h1>
           <p className="mt-5 text-base font-medium leading-7 text-black/70 sm:mt-6 sm:text-xl sm:leading-8">
-            把分享链接粘贴进来，马上查出是谁分享的，一键打开对方的网易云主页。
+            支持网易云音乐、小红书：把分享链接或整段分享文字粘贴进来，马上查出是谁分享的，一键打开对方主页。
           </p>
           <div className="mt-6 flex gap-2 sm:mt-8" aria-hidden="true">
             <span className="h-3 w-14 bg-black" />
@@ -146,8 +146,9 @@ export function DecoderShell() {
             <section className="border-t-[3px] border-black pt-6">
               <h2 className="text-xl font-black text-black sm:text-2xl">为什么有时候查不到？</h2>
               <p className="mt-4 text-sm leading-7 text-black/75 sm:text-base sm:leading-8">
-                多半是分享内容复制得不完整，或者这条链接本身没带分享者信息。
-                回到网易云重新点分享、复制整段内容再试一次，大多数情况就能查到了。
+                多半是分享内容复制得不完整，或者这条链接本身没带分享者信息
+                （比如网页版的小红书笔记链接只有笔记 ID）。
+                回到 App 重新点分享、复制整段内容再试一次，大多数情况就能查到了。
                 还是不行的话，欢迎到 GitHub 上把链接样例发给我们。
               </p>
             </section>

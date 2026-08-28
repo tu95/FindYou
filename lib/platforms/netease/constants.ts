@@ -1,3 +1,4 @@
+import "server-only";
 export const NETEASE_PLATFORM_ID = "netease";
 export const NETEASE_PLATFORM_LABEL = "网易云音乐";
 

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { ResolveError, getErrorMessage } from "@/lib/errors";
-import { resolveShareLink } from "@/lib/platforms";
+import { sanitizeShareLink } from "@/lib/platforms";
 
-interface ResolveRequest {
+interface SanitizeRequest {
   url?: string;
 }
 
@@ -29,14 +29,14 @@ async function resolveShortLink(url: string) {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as ResolveRequest;
+    const body = (await request.json()) as SanitizeRequest;
     const input = body.url?.trim();
 
     if (!input) {
       throw new ResolveError("请先粘贴分享链接");
     }
 
-    const result = await resolveShareLink(input, { resolveShortLink });
+    const result = await sanitizeShareLink(input, { resolveShortLink });
 
     return NextResponse.json(result);
   } catch (error) {

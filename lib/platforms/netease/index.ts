@@ -1,3 +1,4 @@
+import "server-only";
 import { ResolveError } from "@/lib/errors";
 import type { PlatformResolver, ResolveContext, ResolveResult } from "../types";
 import {
@@ -6,11 +7,11 @@ import {
   NETEASE_PLATFORM_LABEL,
 } from "./constants";
 import { decodeLegacyUct, decodeUct2 } from "./decode";
+import { sanitizeNeteaseUrl } from "./sanitize";
 import {
-  canHandleNeteaseUrl,
+  findNeteaseUrl,
   getMergedSearchParams,
   isNeteaseShortLink,
-  normalizeInput,
 } from "./url";
 
 function buildResult(payload: Omit<ResolveResult, "platform" | "platformId" | "profileUrl">) {
@@ -25,9 +26,15 @@ function buildResult(payload: Omit<ResolveResult, "platform" | "platformId" | "p
 export const neteaseResolver: PlatformResolver = {
   id: NETEASE_PLATFORM_ID,
   label: NETEASE_PLATFORM_LABEL,
-  canHandle: canHandleNeteaseUrl,
+  canHandle: (input) => findNeteaseUrl(input) !== null,
   async resolve(input: string, context?: ResolveContext) {
-    let targetUrl = normalizeInput(input);
+    const found = findNeteaseUrl(input);
+
+    if (!found) {
+      throw new ResolveError("这个链接看起来不太对");
+    }
+
+    let targetUrl = found;
     let fromShortLink = false;
 
     if (isNeteaseShortLink(targetUrl)) {
@@ -89,4 +96,5 @@ export const neteaseResolver: PlatformResolver = {
 
     throw new ResolveError("这条链接里没找到分享者信息");
   },
+  sanitize: (input, context) => sanitizeNeteaseUrl(input, context),
 };
