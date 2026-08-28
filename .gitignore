@@ -10,3 +10,8 @@ __pycache__/
 
 # xhs mini tool package
 xhs_mini_tool.zip
+
+# 编译产物 / 本地环境（不入库）
+.venv/
+*.tsbuildinfo
+.DS_Store
