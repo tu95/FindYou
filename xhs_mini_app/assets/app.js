@@ -276,7 +276,13 @@
         return l && !/^https?:/i.test(l) && !/发布了一篇/.test(l) && !/^(复制本条信息|打开|来自|小红书)/.test(l);
       });
       for (var j = 0; j < lines.length; j++) {
-        if (/[\u4e00-\u9fa5]/.test(lines[j]) && lines[j].length > 2) { title = lines[j].slice(0, 60); break; }
+        if (!/[\u4e00-\u9fa5]/.test(lines[j]) || lines[j].length <= 2) continue;
+        var line = lines[j].replace(/https?:\/\/\S+/g, '').trim();
+        line = line.replace(/^\d+\s+/, ''); // 去掉行首序号（如 "93 "）
+        var br = line.match(/【([^】]{2,60})】/); // 网页分享标题在【】里
+        if (br) { title = br[1]; break; }
+        line = line.replace(/\s*😆[^😆\n]*😆\s*/g, ' ').replace(/\s{2,}/g, ' ').trim(); // 去掉 😆口令😆
+        if (line) { title = line.slice(0, 60); break; }
       }
     }
     var type = '笔记';
