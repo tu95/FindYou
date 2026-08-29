@@ -18,8 +18,6 @@
   };
 
   var HISTORY_KEY = 'share_parser_history_v1';
-  var currentCardUrl = '';
-  var lastData = null;
 
   /* ============================================================
    * 基础工具
@@ -294,10 +292,14 @@
 
   // 脱敏：抹掉分享者参数，其余原样保留（字符串级替换，保持原始编码）
   function stripXhsSharerParams(rawUrl) {
+    var removed = [];
     var out = rawUrl.replace(/[?&](shareRedId|appuid)=[^&]*/g, function (match) {
+      var key = match.replace(/^[?&]/, '').split('=', 1)[0];
+      if (removed.indexOf(key) === -1) removed.push(key);
       return match.indexOf('?') === 0 ? '?' : '';
     });
-    return out.replace(/\?&/g, '?').replace(/[?&]$/, '');
+    out = out.replace(/\?&/g, '?').replace(/[?&]$/, '');
+    return { cleanUrl: out, removed: removed };
   }
 
   var XHS_LINK_TYPE_LABEL = {
@@ -375,7 +377,9 @@
     data.noteId = noteId || undefined;
     data.linkType = linkType;
     data.linkTypeLabel = XHS_LINK_TYPE_LABEL[linkType] || linkType;
-    data.cleanUrl = stripXhsSharerParams(targetUrl);
+    var strippedXhs = stripXhsSharerParams(targetUrl);
+    data.cleanUrl = strippedXhs.cleanUrl;
+    if (strippedXhs.removed.length) data.removedParams = strippedXhs.removed;
     data.shareTime = toUnixSeconds(params.apptime);
     data.shareChannel = params.xhsshare || undefined;
     data.shareEventId = params.share_id || undefined;
@@ -667,70 +671,12 @@
   }
 
   /* ============================================================
-   * 结果渲染
+   * 结果渲染（只有两个输出：分享者主页链接 / 脱敏后链接）
    * ============================================================ */
 
   function badgeHtml(platform, label) {
     var t = THEME[platform] || THEME.xhs;
     return '<span class="badge" style="background:' + t.light + ';color:' + t.color + '">' + esc(label) + '</span>';
-  }
-
-  function fieldHtml(label, valueHtml, selectable) {
-    if (!valueHtml) return '';
-    return '<div class="field"><div class="field-label">' + esc(label)
-      + '</div><div class="field-value' + (selectable ? ' selectable' : '') + '">' + valueHtml + '</div></div>';
-  }
-
-  function linkHtml(url, platform) {
-    return '<span class="link" data-copy="' + esc(url) + '">' + esc(url) + '</span>';
-  }
-
-  function sharerBlockHtml(data) {
-    if (!data.userId) return '';
-    var html = '<div class="sharer-box">';
-    html += '<div class="sharer-label">分享者 ID</div>';
-    html += '<div class="sharer-id selectable">' + esc(data.userId) + '</div>';
-    if (data.profileUrl) {
-      html += '<div class="sharer-home-row">';
-      html += '<span class="sharer-url selectable" id="profile-url">' + esc(data.profileUrl) + '</span>';
-      html += '<button type="button" class="btn-sm" id="profile-btn">分享者主页</button>';
-      html += '</div>';
-    }
-    if (data.algorithm) html += '<div class="sharer-algo">' + esc(data.algorithm) + '</div>';
-    html += '</div>';
-    return html;
-  }
-
-  // 核心输出 2：脱敏后的分享内容 + 大按钮（容器无剪贴板 API，点击后选中文本引导长按复制）
-  function cleanCopyBlockHtml(data) {
-    if (!data.cleanUrl && !data.targetUrl) return '';
-    var label = '脱敏后的分享内容';
-    if (data.removedParams && data.removedParams.length) {
-      label += '（已抹 ' + esc(data.removedParams.join('、')) + '）';
-    } else if (!data.needsNetwork) {
-      label += '（未发现分享者参数）';
-    }
-    var t = THEME[data.platform] || THEME.xhs;
-    var html = '<div class="clean-box">';
-    html += '<div class="clean-label">' + label + '</div>';
-    html += '<div class="clean-content selectable" id="clean-text">' + esc(data.cleanText || '') + '</div>';
-    html += '<button type="button" class="btn-big" id="clean-copy" style="background:' + t.color + '">复制脱敏后的分享内容</button>';
-    html += '<div class="tip" id="clean-tip">点击按钮自动选中下方内容，长按选择「复制」即可转发</div>';
-    html += '</div>';
-    return html;
-  }
-
-  function metaRowsHtml(data) {
-    var html = '';
-    if (data.linkTypeLabel) html += fieldHtml('链接类型', esc(data.linkTypeLabel));
-    if (data.noteId) html += fieldHtml('内容 ID', '<code>' + esc(data.noteId) + '</code>', true);
-    if (data.xsecToken) html += fieldHtml('xsec_token', '<code>' + esc(data.xsecToken) + '</code>', true);
-    if (data.shareTime) html += fieldHtml('分享时间', esc(formatTime(data.shareTime)), true);
-    if (data.shareChannel) html += fieldHtml('分享渠道', esc(data.shareChannel), true);
-    if (data.shareEventId) html += fieldHtml('分享事件', esc(data.shareEventId), true);
-    if (data.appVersion) html += fieldHtml('App 版本', esc(data.appVersion), true);
-    if (data.uctKind) html += fieldHtml('加密方式', esc(data.uctKind));
-    return html;
   }
 
   function noticeBlockHtml(data) {
@@ -743,41 +689,48 @@
     return '';
   }
 
+  // 输出 1：分享者主页链接 + 复制小按钮
+  function outBlockProfile(data) {
+    if (!data.userId || !data.profileUrl) return '';
+    var t = THEME[data.platform] || THEME.xhs;
+    return '<div class="out-block">'
+      + '<div class="out-label">分享者主页链接</div>'
+      + '<div class="out-content selectable" id="profile-url">' + esc(data.profileUrl) + '</div>'
+      + '<button type="button" class="btn-sm" id="profile-btn">复制分享者主页链接</button>'
+      + '<div class="tip" id="profile-tip"></div>'
+      + '</div>';
+  }
+
+  // 输出 2：脱敏后链接 + 复制大按钮
+  function outBlockClean(data) {
+    if (!data.cleanUrl && !data.targetUrl) return '';
+    var label = '脱敏后链接';
+    if (data.removedParams && data.removedParams.length) {
+      label += '（已抹 ' + esc(data.removedParams.join('、')) + '）';
+    } else if (!data.needsNetwork) {
+      label += '（未发现分享者参数）';
+    }
+    var t = THEME[data.platform] || THEME.xhs;
+    return '<div class="out-block">'
+      + '<div class="out-label">' + label + '</div>'
+      + '<div class="out-content selectable" id="clean-text">' + esc(data.cleanUrl || data.cleanText || '') + '</div>'
+      + '<button type="button" class="btn-big" id="clean-copy" style="background:' + t.color + '">复制脱敏后链接</button>'
+      + '<div class="tip" id="clean-tip">点击按钮自动选中链接，长按选择「复制」</div>'
+      + '</div>';
+  }
+
   function renderResult(d, fromHistory) {
     var box = $('#result');
     box.setAttribute('data-platform', d.platform);
-    var headLabel;
-    if (d.platform === 'xhs') {
-      headLabel = '小红书 · ' + (d.type || d.linkTypeLabel || '笔记');
-    } else {
-      headLabel = '网易云音乐' + (d.type ? ' · ' + d.type : '');
-    }
+    var headLabel = d.platform === 'xhs' ? '小红书' : '网易云音乐';
     var html = '<div class="result-head">' + badgeHtml(d.platform, headLabel)
       + '<span class="result-time">' + nowLabel() + '</span></div>';
     html += noticeBlockHtml(d);
-    html += sharerBlockHtml(d);
-    html += cleanCopyBlockHtml(d);
-    if (d.platform === 'xhs') {
-      if (d.author) html += fieldHtml('作者', esc(d.author), true);
-      if (d.title) html += fieldHtml('标题', esc(d.title), true);
-    } else {
-      if (d.nameLine) html += fieldHtml(d.type === '单曲' ? '歌曲' : '名称', esc(d.nameLine), true);
-    }
-    if (d.targetUrl) html += fieldHtml('原链接', linkHtml(d.targetUrl, d.platform), true);
-    html += metaRowsHtml(d);
-    html += '<div class="result-actions">'
-      + (d.platform === 'xhs' ? '<button type="button" class="btn btn-xhs" id="open-btn">在小红书打开</button>' : '')
-      + '<button type="button" class="btn btn-ghost" id="card-btn">生成分享卡片</button>'
-      + '</div>';
-    html += '<div class="tip">点击链接自动选中文本，长按可「复制」</div>';
+    html += outBlockProfile(d);
+    html += outBlockClean(d);
     box.innerHTML = html;
     box.hidden = false;
     safeScroll(box);
-
-    var openBtn = $('#open-btn');
-    if (openBtn) openBtn.addEventListener('click', function () { openXhsNote(d); });
-    $('#card-btn').addEventListener('click', function () { makeCard(d.platform, d); });
-    wireCleanCopy();
 
     if (!fromHistory) {
       var label;
@@ -787,30 +740,6 @@
         label = d.nameLine || d.userId || ('网易云 ' + (d.type || ''));
       }
       addHistory({ platform: d.platform, label: label, time: nowLabel(), d: d });
-    }
-    lastData = d;
-  }
-
-  function wireCleanCopy() {
-    var btn = $('#clean-copy');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var el = $('#clean-text');
-      if (!el) return;
-      selectText(el);
-      el.classList.add('flash');
-      var tip = $('#clean-tip');
-      if (tip) tip.textContent = '✅ 已选中上方内容，长按选择「复制」即可转发';
-      setTimeout(function () { el.classList.remove('flash'); }, 800);
-    });
-    var profileBtn = $('#profile-btn');
-    if (profileBtn) {
-      profileBtn.addEventListener('click', function () {
-        var el = $('#profile-url');
-        if (!el) return;
-        selectText(el);
-        el.classList.add('flash');
-      });
     }
   }
 
@@ -858,175 +787,6 @@
 
   function showHistoryItem(it) {
     renderResult(it.d, true);
-  }
-
-  /* ============================================================
-   * Native 能力（JSBridge，容器内可用）
-   * ============================================================ */
-
-  function openXhsNote(d) {
-    var mt = (window.xhs && window.xhs.miniTool) || null;
-    if (!mt || !mt.openRedPage) {
-      alert('当前环境不支持跳转，请复制笔记链接到小红书 App 打开');
-      return;
-    }
-    if (!d.noteId) {
-      alert('该链接没有笔记 ID，无法跳转');
-      return;
-    }
-    mt.openRedPage({ type: 'note', params: { id: d.noteId } }).then(function () {}, function (err) {
-      alert('跳转失败：' + ((err && err.errMsg) || '当前容器不支持该跳转类型'));
-    });
-  }
-
-  function saveCardToAlbum() {
-    if (!currentCardUrl) return;
-    var mt = (window.xhs && window.xhs.miniTool) || null;
-    if (!mt || !mt.writeTempFile || !mt.saveImageToPhotosAlbum) {
-      alert('当前环境不支持保存到相册，可长按预览图手动保存');
-      return;
-    }
-    mt.writeTempFile({ data: currentCardUrl }).then(function (res) {
-      return mt.saveImageToPhotosAlbum({ filePath: res.filePath });
-    }).then(function () {
-      alert('已保存到相册');
-    }).catch(function (err) {
-      alert('保存失败：' + ((err && err.errMsg) || '未知错误'));
-    });
-  }
-
-  /* ============================================================
-   * 分享卡片（Canvas 2D 生成）
-   * ============================================================ */
-
-  function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
-    var lines = [];
-    var line = '';
-    var rest = '';
-    var i;
-    for (i = 0; i < text.length; i++) {
-      var test = line + text[i];
-      if (ctx.measureText(test).width > maxWidth && line) {
-        lines.push(line);
-        line = text[i];
-        if (lines.length === maxLines) { rest = text.slice(i + 1); break; }
-      } else {
-        line = test;
-      }
-    }
-    if (lines.length < maxLines && line) lines.push(line);
-    if (rest) lines[maxLines - 1] = lines[maxLines - 1].slice(0, -1) + '…';
-    for (var k = 0; k < lines.length; k++) ctx.fillText(lines[k], x, y + k * lineHeight);
-    return lines.length;
-  }
-
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  function drawShareCard(platform, info) {
-    var W = 750, H = 1080;
-    var cv = document.createElement('canvas');
-    cv.width = W; cv.height = H;
-    var ctx = cv.getContext('2d');
-    var t = THEME[platform] || THEME.xhs;
-
-    var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, t.color);
-    g.addColorStop(1, t.dark);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.textAlign = 'center';
-
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.font = 'bold 36px "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText(t.name + ' · 分享解析', W / 2, 116);
-
-    if (info.typeLabel) {
-      ctx.font = '26px "PingFang SC", "Microsoft YaHei", sans-serif';
-      var tw = ctx.measureText(info.typeLabel).width + 56;
-      roundRect(ctx, W / 2 - tw / 2, 158, tw, 58, 29);
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      ctx.fill();
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(info.typeLabel, W / 2, 197);
-    }
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 48px "PingFang SC", "Microsoft YaHei", sans-serif';
-    var mainLines = wrapText(ctx, info.main, W / 2, 330, W - 140, 70, 3);
-
-    var y = 330 + mainLines * 70 + 36;
-    if (info.sub) {
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.font = '32px "PingFang SC", "Microsoft YaHei", sans-serif';
-      var subLines = wrapText(ctx, info.sub, W / 2, y, W - 140, 46, 2);
-      y += subLines * 46 + 20;
-    } else {
-      y += 20;
-    }
-
-    if (info.sharerLine) {
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
-      ctx.font = 'bold 34px "PingFang SC", "Microsoft YaHei", sans-serif';
-      var sharerLines = wrapText(ctx, info.sharerLine, W / 2, Math.max(y + 40, 700), W - 140, 48, 2);
-      y = Math.max(y + 40, 700) + sharerLines * 48 + 20;
-    }
-
-    if (info.id) {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 34px "SF Mono", Menlo, Consolas, monospace';
-      ctx.fillText(info.idLabel + ' ' + info.id, W / 2, 880);
-    }
-    if (info.link) {
-      ctx.fillStyle = 'rgba(255,255,255,0.78)';
-      ctx.font = '26px "SF Mono", Menlo, Consolas, "PingFang SC", monospace';
-      wrapText(ctx, info.link, W / 2, 940, W - 120, 38, 2);
-    }
-
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.font = '24px "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText('小红书小工具 · 分享解析', W / 2, H - 64);
-
-    return cv.toDataURL('image/png');
-  }
-
-  function makeCard(platform, d) {
-    var sharerLine = d.userId ? '分享者：' + d.userId : '';
-    var info;
-    if (platform === 'xhs') {
-      info = {
-        main: d.title || (d.userId ? '小红书笔记' : '小红书网页分享'),
-        sub: d.author ? '作者：' + d.author : '',
-        idLabel: '笔记ID',
-        id: d.noteId || '',
-        link: d.cleanUrl || d.targetUrl || '',
-        typeLabel: d.type || d.linkTypeLabel || '笔记',
-        sharerLine: sharerLine
-      };
-    } else {
-      info = {
-        main: d.nameLine || '网易云音乐',
-        sub: d.type || '',
-        idLabel: d.type === '单曲' ? '歌曲' : '内容',
-        id: d.noteId || '',
-        link: d.cleanUrl || d.targetUrl || '',
-        typeLabel: d.type || '分享',
-        sharerLine: sharerLine
-      };
-    }
-    currentCardUrl = drawShareCard(platform, info);
-    var img = $('#card-img');
-    img.src = currentCardUrl;
-    $('#card-preview').hidden = false;
-    safeScroll($('#card-preview'));
   }
 
   /* ============================================================
@@ -1097,9 +857,6 @@
       case 'clear-btn': doClear(); break;
       case 'clean-copy': doCleanCopy(); break;
       case 'profile-btn': doProfileSelect(); break;
-      case 'open-btn': if (lastData) openXhsNote(lastData); break;
-      case 'card-btn': if (lastData) makeCard(lastData.platform, lastData); break;
-      case 'card-save': saveCardToAlbum(); break;
       case 'history-clear': saveHistory([]); renderHistory(); break;
       default: break;
     }

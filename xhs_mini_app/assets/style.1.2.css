@@ -102,75 +102,21 @@ body { background: var(--bg); }
 }
 .result-time { font-size: 12px; color: var(--sub); }
 
-.field {
-  display: flex;
-  padding: 10px 0;
-  border-bottom: 1px dashed var(--border);
-  font-size: 14px;
-  line-height: 1.5;
-}
-.field:last-of-type { border-bottom: 0; }
-.field-label { flex: 0 0 72px; color: var(--sub); font-size: 13px; padding-top: 1px; }
-.field-value { flex: 1; min-width: 0; word-break: break-all; }
-
-code {
-  font-family: "SF Mono", Menlo, Consolas, monospace;
-  font-size: 13px;
-  background: #F5F5F7;
-  padding: 2px 6px;
-  border-radius: 6px;
-  word-break: break-all;
-}
-.link { color: var(--xhs); word-break: break-all; }
-.result[data-platform="netease"] .link { color: var(--net); }
-.result[data-platform="netease"] code { background: var(--net-light); }
-
-.selectable, .link { -webkit-user-select: text; user-select: text; }
-
 /* 分享者高亮块 */
-.sharer-box {
-  border: 2px solid var(--text);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin: 10px 0 4px;
-  background: linear-gradient(135deg, #FFF8F0, #FFFFFF);
-}
-.sharer-label { font-size: 12px; color: var(--sub); letter-spacing: 1px; }
-.sharer-id {
-  margin-top: 4px;
-  font-size: 22px;
-  font-weight: 800;
-  font-family: "SF Mono", Menlo, Consolas, monospace;
-  letter-spacing: 0.5px;
-  word-break: break-all;
-}
-.sharer-url { margin-top: 6px; font-size: 13px; line-height: 1.6; word-break: break-all; }
-.sharer-home-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-.sharer-home-row .sharer-url { flex: 1; margin-top: 0; font-size: 12px; color: var(--sub); min-width: 0; }
-.btn-sm {
-  flex: none;
-  border: 1.5px solid var(--text);
-  background: #FFFFFF;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  font-family: inherit;
-  color: var(--text);
-}
-.btn-sm:active { opacity: 0.7; }
-.sharer-algo { margin-top: 4px; font-size: 12px; color: var(--sub); }
-
 /* 脱敏后的分享内容 + 大按钮 */
-.clean-box {
+.out-block {
   margin-top: 12px;
   border: 2px solid var(--text);
   border-radius: 14px;
   padding: 12px;
   background: #FFFEF8;
 }
-.clean-label { font-size: 12px; color: var(--sub); letter-spacing: 1px; }
-.clean-content {
+.out-label { font-size: 12px; color: var(--sub); letter-spacing: 1px; }
+.selectable, .out-content {
+    -webkit-user-select: text;
+    user-select: text;
+}
+.out-content {
   margin-top: 8px;
   font-size: 13px;
   line-height: 1.7;
@@ -181,7 +127,7 @@ code {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
-.clean-content.flash { background: rgba(255, 200, 60, 0.35); border-radius: 6px; }
+.out-content.flash { background: rgba(255, 200, 60, 0.35); border-radius: 6px; }
 .btn-big {
   display: block;
   width: 100%;
@@ -214,16 +160,7 @@ code {
   border-color: #F5C99A;
 }
 
-.result-actions { display: flex; gap: 10px; margin-top: 12px; }
-.result-actions .btn { flex: 1; padding: 10px 0; font-size: 14px; }
-
-.tip { font-size: 12px; color: var(--sub); margin-top: 10px; line-height: 1.6; }
-.empty { color: var(--sub); font-size: 14px; text-align: center; padding: 18px 8px; line-height: 1.7; }
-
 /* ---------- 分享卡片预览 ---------- */
-
-.card-img-wrap { border-radius: 12px; overflow: hidden; background: #000; }
-.card-img-wrap img { display: block; width: 100%; }
 
 /* ---------- 历史 ---------- */
 
