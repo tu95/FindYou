@@ -38,21 +38,21 @@
         <div class="beast-shadow"></div>
       </div>
       <h1 class="app-title">吞链兽</h1>
-      <p class="app-sub">把链接喂给它 · 吐出干净链接</p>
+      <p class="app-sub">链接丢进来 ✨ 干净链接秒出来</p>
     </header>
 
     <!-- 统一输入 -->
     <section class="panel">
       <div class="card">
-        <h2 class="card-title">小红书 · 网易云 分享解析</h2>
+        <h2 class="card-title">喂什么吃什么！小红书 / 网易云都能解</h2>
         <textarea id="input" class="input" rows="4"
-          placeholder="长按粘贴小红书 / 网易云音乐的分享文案…&#10;自动识别平台，点「吞掉」解析"></textarea>
+          placeholder="把你的分享链接丢进来👇&#10;小红书 / 网易云都🉑，一秒吐出干净链接✨"></textarea>
         <div class="btn-row">
           <button type="button" id="parse-btn" class="btn btn-primary">吞掉</button>
-          <button type="button" id="clear-btn" class="btn btn-ghost">清空</button>
+          <button type="button" id="clear-btn" class="btn btn-ghost">换个链接再来</button>
         </div>
         <div class="samples">
-          <span class="sample-label">试试示例</span>
+          <span class="sample-label">抄作业版示例</span>
           <button type="button" class="chip" data-sample="xhs-short">📕 口令短链</button>
           <button type="button" class="chip" data-sample="xhs-sharered">📕 App分享</button>
           <button type="button" class="chip" data-sample="xhs-long">📕 网页长链</button>
@@ -65,12 +65,12 @@
 
     <!-- 历史 -->
     <section class="card history-card" id="history-card" hidden>
-      <h2 class="card-title">解析历史 <span class="history-count" id="history-count"></span></h2>
+      <h2 class="card-title">最近吞过的链接 <span class="history-count" id="history-count"></span></h2>
       <div id="history-list"></div>
       <button type="button" id="history-clear" class="btn btn-ghost btn-block">清空历史</button>
     </section>
 
-    <footer class="app-footer">吞链兽 · 纯本地解析 · 不联网 · 历史记录仅存本机 · v1.3 <span id="js-ok" hidden>· ⚡脚本已加载</span></footer>
+    <footer class="app-footer">吞链兽 · 全程本地跑，不上传不记录 🛡️ · v1.4 <span id="js-ok" hidden>· ⚡脚本已加载</span></footer>
   </div>
 
   <!-- crypto-js 组件（按依赖顺序加载，经典脚本） -->
@@ -85,6 +85,6 @@
   <script src="./assets/vendor/crypto-js/pad-pkcs7.js"></script>
   <!-- GSAP 动画库（UMD，暴露 window.gsap） -->
   <script src="./assets/vendor/gsap.min.js"></script>
-  <script src="./assets/app.1.5.js"></script>
+  <script src="./assets/app.1.6.js"></script>
 </body>
 </html>

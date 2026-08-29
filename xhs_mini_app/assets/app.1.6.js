@@ -694,9 +694,9 @@
     if (!data.userId || !data.profileUrl) return '';
     var t = THEME[data.platform] || THEME.xhs;
     return '<div class="out-block">'
-      + '<div class="out-label">分享者主页链接</div>'
+      + '<div class="out-label">🔗 分享者主页在这</div>'
       + '<div class="out-content selectable" id="profile-url">' + esc(data.profileUrl) + '</div>'
-      + '<button type="button" class="btn-sm" id="profile-btn">复制分享者主页链接</button>'
+      + '<button type="button" class="btn-sm" id="profile-btn">一键复制主页</button>'
       + '<div class="tip" id="profile-tip"></div>'
       + '</div>';
   }
@@ -704,18 +704,18 @@
   // 输出 2：脱敏后链接 + 复制大按钮
   function outBlockClean(data) {
     if (!data.cleanUrl && !data.targetUrl) return '';
-    var label = '脱敏后链接';
+    var label = '✨ 干净链接出炉啦';
     if (data.removedParams && data.removedParams.length) {
-      label += '（已抹 ' + esc(data.removedParams.join('、')) + '）';
+      label += '（已帮你抹掉 ' + esc(data.removedParams.join('、')) + '）';
     } else if (!data.needsNetwork) {
-      label += '（未发现分享者参数）';
+      label += '（这条本来就很干净）';
     }
     var t = THEME[data.platform] || THEME.xhs;
     return '<div class="out-block">'
       + '<div class="out-label">' + label + '</div>'
       + '<div class="out-content selectable" id="clean-text">' + esc(data.cleanUrl || data.cleanText || '') + '</div>'
-      + '<button type="button" class="btn-big" id="clean-copy" style="background:' + (t.btn || t.color) + '">复制脱敏后链接</button>'
-      + '<div class="tip" id="clean-tip">点击按钮自动选中链接，长按选择「复制」</div>'
+      + '<button type="button" class="btn-big" id="clean-copy" style="background:' + (t.btn || t.color) + '">一键复制干净链接</button>'
+      + '<div class="tip" id="clean-tip">点一下自动选中，长按「复制」就能发出去啦</div>'
       + '</div>';
   }
 
@@ -922,7 +922,7 @@
     var box = $('#result');
     var text = $('#input').value.trim();
     if (!text) {
-      box.innerHTML = '<div class="empty">请先在上方粘贴小红书或网易云音乐的分享内容，再点「吞掉」</div>';
+      box.innerHTML = '<div class="empty">先把链接丢进来，再点「吞掉」哦 🥺</div>';
       box.hidden = false;
       return;
     }
@@ -948,7 +948,7 @@
     selectText(el);
     el.classList.add('flash');
     var tip = $('#clean-tip');
-    if (tip) tip.textContent = '✅ 已选中上方内容，长按选择「复制」即可转发';
+    if (tip) tip.textContent = '✅ 已选中啦，长按「复制」就能发出去';
     setTimeout(function () { el.classList.remove('flash'); }, 800);
   }
 
