@@ -24,12 +24,13 @@
     <header class="app-header">
       <div class="app-logo">📕</div>
       <h1 class="app-title">分享解析小工具</h1>
-      <p class="app-sub">小红书 · 网易云音乐 分享内容本地解析</p>
+      <p class="app-sub">小红书 · 网易云音乐 · 抖音 分享内容本地解析</p>
     </header>
 
     <nav class="tabs" id="tabs" data-active="xhs" aria-label="平台切换">
       <button type="button" class="tab is-active" data-tab="xhs">📕 小红书</button>
-      <button type="button" class="tab" data-tab="netease">🎵 网易云音乐</button>
+      <button type="button" class="tab" data-tab="netease">🎵 网易云</button>
+      <button type="button" class="tab" data-tab="douyin">🎬 抖音</button>
     </nav>
 
     <!-- 小红书 -->
@@ -37,14 +38,16 @@
       <div class="card">
         <h2 class="card-title">粘贴小红书分享内容</h2>
         <textarea id="xhs-input" class="input" rows="6"
-          placeholder="长按粘贴从小红书复制的分享文案（含链接）…&#10;&#10;支持：xhslink.com 口令短链、xiaohongshu.com 笔记长链"></textarea>
+          placeholder="长按粘贴从小红书复制的分享文案（含链接）…&#10;&#10;支持：xhslink.com 口令短链、xiaohongshu.com 笔记长链（含 shareRedId / appuid）"></textarea>
         <div class="btn-row">
           <button type="button" id="xhs-parse" class="btn btn-xhs">解析</button>
           <button type="button" id="xhs-clear" class="btn btn-ghost">清空</button>
         </div>
         <div class="samples">
           <span class="sample-label">试试示例</span>
-          <button type="button" class="chip" data-sample="xhs-short">短链口令</button>
+          <button type="button" class="chip" data-sample="xhs-short">口令短链</button>
+          <button type="button" class="chip" data-sample="xhs-sharered">App分享(shareRedId)</button>
+          <button type="button" class="chip" data-sample="xhs-appuid">App分享(appuid)</button>
           <button type="button" class="chip" data-sample="xhs-long">网页长链</button>
         </div>
       </div>
@@ -56,18 +59,39 @@
       <div class="card">
         <h2 class="card-title">粘贴网易云音乐分享内容</h2>
         <textarea id="net-input" class="input" rows="6"
-          placeholder="长按粘贴网易云音乐 App 或网页复制的分享文案…&#10;&#10;支持：单曲 / 歌单 / 专辑 / 电台 / MV 的 music.163.com 链接"></textarea>
+          placeholder="长按粘贴网易云音乐 App 或网页复制的分享文案…&#10;&#10;支持：单曲 / 歌单 / 专辑 / 电台 / MV 的 music.163.com 链接，含 userid / uct2 / uct 分享者参数"></textarea>
         <div class="btn-row">
           <button type="button" id="net-parse" class="btn btn-net">解析</button>
           <button type="button" id="net-clear" class="btn btn-ghost">清空</button>
         </div>
         <div class="samples">
           <span class="sample-label">试试示例</span>
-          <button type="button" class="chip" data-sample="net-song">分享单曲</button>
-          <button type="button" class="chip" data-sample="net-playlist">分享歌单</button>
+          <button type="button" class="chip" data-sample="net-song-uct2">单曲(uct2)</button>
+          <button type="button" class="chip" data-sample="net-playlist-uid">歌单(userid)</button>
+          <button type="button" class="chip" data-sample="net-song-uct">单曲(旧版uct)</button>
         </div>
       </div>
       <div class="card result" id="net-result" hidden></div>
+    </section>
+
+    <!-- 抖音 -->
+    <section class="panel" id="panel-douyin" hidden>
+      <div class="card">
+        <h2 class="card-title">粘贴抖音分享内容</h2>
+        <textarea id="dy-input" class="input" rows="6"
+          placeholder="长按粘贴抖音复制的分享文案 / 链接，或直接输入 aweme_id / uid / sec_uid…&#10;&#10;注意：v.douyin.com 短链与用户主页反查需要联网，小工具内不可用"></textarea>
+        <div class="btn-row">
+          <button type="button" id="dy-parse" class="btn btn-dy">解析</button>
+          <button type="button" id="dy-clear" class="btn btn-ghost">清空</button>
+        </div>
+        <div class="samples">
+          <span class="sample-label">试试示例</span>
+          <button type="button" class="chip" data-sample="dy-short">口令短链</button>
+          <button type="button" class="chip" data-sample="dy-video-ai">视频链接(含分享者)</button>
+          <button type="button" class="chip" data-sample="dy-aweme">裸 aweme_id</button>
+        </div>
+      </div>
+      <div class="card result" id="dy-result" hidden></div>
     </section>
 
     <!-- 分享卡片 -->
@@ -89,6 +113,17 @@
 
     <footer class="app-footer">纯本地解析 · 不联网 · 历史记录仅存本机</footer>
   </div>
+
+  <!-- crypto-js 组件（按依赖顺序加载，经典脚本） -->
+  <script src="./assets/vendor/crypto-js/core.js"></script>
+  <script src="./assets/vendor/crypto-js/x64-core.js"></script>
+  <script src="./assets/vendor/crypto-js/cipher-core.js"></script>
+  <script src="./assets/vendor/crypto-js/enc-base64.js"></script>
+  <script src="./assets/vendor/crypto-js/enc-base64url.js"></script>
+  <script src="./assets/vendor/crypto-js/md5.js"></script>
+  <script src="./assets/vendor/crypto-js/aes.js"></script>
+  <script src="./assets/vendor/crypto-js/mode-ecb.js"></script>
+  <script src="./assets/vendor/crypto-js/pad-pkcs7.js"></script>
   <script src="./assets/app.js"></script>
 </body>
 </html>

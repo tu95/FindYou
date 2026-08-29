@@ -1,53 +1,58 @@
 # 校验摘要（Validation Summary）
 
-小工具：分享解析小工具（小红书 / 网易云音乐）
+小工具：分享解析小工具（小红书 / 网易云音乐 / 抖音）
 Skill 依据：`.skill/SKILL.md`（minitool-zip-builder v1.4.0）及其 4 个 reference
 
 ## 产物
 
-- 源码目录：`xhs_mini_app/`（index.html + assets/style.css + assets/app.js）
-- 打包产物：`xhs_mini_tool.zip`（12 KB，远低于 2MB 建议值与 10MB 上限）
+- 源码目录：`xhs_mini_app/`（index.html + assets/）
+- 打包产物：`xhs_mini_tool.zip`
 
-## 功能
+## 与 Web 项目保持同步
 
-- **小红书分享解析**：xhslink.com 口令短链、xiaohongshu.com/explore 与 /discovery/item 长链（含 xsec_token），提取笔记 ID / 作者 / 标题 / 链接
-- **网易云音乐分享解析**：music.163.com 单曲 / 歌单 / 专辑 / 电台 / MV / 歌手链接，提取 ID / 歌名 / 歌手 / 链接；识别小程序口令并提示
-- 附带：Canvas 2D 生成分享卡片（可经 JSBridge 保存到相册）、localStorage 解析历史
+解析逻辑与 Web 项目（`lib/platforms/`，findYourNetEaseCloudMusic）逐项对齐，算法逐字移植：
 
-## 自检结果（对照 zip-artifact-spec.md §6 清单）
+| 平台 | 同步的能力 | Web 项目对应文件 |
+| --- | --- | --- |
+| 小红书 | `shareRedId` 本地解码（Base64url + 固定密钥移位）、`appuid` 明文、`user_profile` 主页、`web_share` 网页版说明、脱敏（抹 `shareRedId`/`appuid`）、meta（xsec_token / apptime / xhsshare / share_id / app_version） | xiaohongshu/{decode,url,index,sanitize}.ts |
+| 网易云 | `userid` 明文、`uct2`（移动端 AES-ECB / PC 端 Salted EVP_BytesToKey）、旧版 `uct`、`user/home` 主页、hash 形态链接（`#/song?id=..`）、脱敏（抹 `userid`/`uct2`/`uct`） | netease/{decode,url,index,sanitize}.ts |
+| 抖音 | 输入识别（短链/视频/主页/裸 aweme_id/uid/sec_uid）、`activity_info` 本地解析（分享者 ID / 分享时间 / 分享事件）、脱敏（抹 `activity_info`/`u_code`） | douyin/{decode,url,index,sanitize}.ts |
+
+**容器不联网的边界**（明确提示，不报错）：xhslink / 163cn.tv / v.douyin.com 短链需联网跳转、抖音用户主页反查需在线接口——小工具内给出说明并建议使用完整链接或网站版。
+
+**说明**：网易云 uct2/uct 与小红书 shareRedId 的解码密钥随离线包内置（小工具纯本地解码所必需）；Web 项目密钥仍只在服务端，不受影响。
+
+## 自检结果
 
 ### 包结构 — ✅ 全部通过
-- [x] `index.html` 位于 zip 根目录（解压后顶层直接是文件，无多套一层目录）
+- [x] `index.html` 位于 zip 根目录，解压后顶层直接是文件
 - [x] 仅含允许类型（.html / .css / .js），无 node_modules / *.map / 构建配置 / .DS_Store
 
 ### index.html 与资源 — ✅ 全部通过
-- [x] `<!DOCTYPE html>` + `lang="zh-CN"` + `charset=UTF-8`
-- [x] viewport 含 `width=device-width, initial-scale=1.0, viewport-fit=cover`
+- [x] `<!DOCTYPE html>` + `lang="zh-CN"` + `charset=UTF-8`；viewport 含 `viewport-fit=cover`
 - [x] 全部资源为相对路径 `./assets/...`，无任何 `http(s)://` 外部引用
-- [x] 脚本外置：仅有 `<script src="./assets/app.js">`，无内联 `<script>`、无 `onclick=`、无 `javascript:` / `eval` / `new Function`
-- [x] 经典脚本：无 `type="module"`，JS 内无 `import` / `export` / top-level await
-- [x] 无 `<base href>`、无 `<iframe>` / `<object>`、无自建 CSP `<meta>`
+- [x] 脚本全部外置且为经典脚本：crypto-js 组件 9 个文件按依赖顺序加载（core → x64-core → cipher-core → enc-base64 → enc-base64url → md5 → aes → mode-ecb → pad-pkcs7），业务逻辑在 `app.js`；无内联 `<script>`、无 `onclick=`、无 `javascript:` / `eval` / `new Function`
+- [x] 无 `<base href>`、无 `<iframe>` / `<object>`、无自建 CSP
 
-### 端能力（对照 device-capabilities.md §7 扫描清单）— ✅ 全部通过
-- [x] grep 扫描无命中：fetch / XHR / WebSocket / EventSource / RTCPeerConnection / geolocation / clipboard / execCommand / bluetooth / sensor / Worker / ServiceWorker / WebAuthn / fullscreen / WebAssembly / window.open / window.prompt / location 跳转 / download / target=_blank
-- [x] 剪贴板替代方案：链接文本可点击自动选中（Range + Selection），引导长按手动复制
-- [x] localStorage 仅作本地历史存储（独立隔离，符合规范）
+### 端能力（device-capabilities.md §7 扫描）— ✅ 全部通过
+- [x] grep 扫描无命中：fetch / XHR / WebSocket / clipboard / geolocation / Worker / WebAssembly / window.open / prompt / fullscreen / 外部资源引用等
+- [x] 剪贴板替代：链接文本点击自动选中（Range + Selection），引导长按手动复制
+- [x] localStorage 仅作本地历史
 
 ### JSBridge（jsbridge-api.md）— ✅ 符合
-- [x] 仅调用 `window.xhs.miniTool.writeTempFile / saveImageToPhotosAlbum / openRedPage`，参数符合文档 schema
-- [x] `writeTempFile.data` 传完整 `canvas.toDataURL()` data:uri；`saveImageToPhotosAlbum.filePath` 用 writeTempFile 返回值
-- [x] 均先检测 `window.xhs.miniTool` 是否存在，非容器环境优雅降级（alert 提示）
+- [x] 仅调用 `writeTempFile / saveImageToPhotosAlbum / openRedPage`，参数符合 schema；均先检测 `window.xhs.miniTool` 存在性，非容器环境优雅降级
 
 ### 正确性 — ✅ 通过
-- [x] `node --check` JS 语法零错误
-- [x] 解析逻辑真实运行测试：29 个用例全部通过（短链 / 长链 / 单曲 / 歌单 / 专辑 / MV / 小程序口令 / 负例）
-- [x] 事件绑定、DOM 依赖、回调闭环完整（单一入口 JS，按依赖顺序加载）
+- [x] `node --check` 语法零错误
+- [x] 解析逻辑真实运行测试：**57 个用例全部通过**（shareRedId 解码、appuid、web_share、uct2 移动端/PC Salted 端、旧版 uct、hash 链接、userid 明文、activity_info、裸 ID 识别、短链/主页反查的联网提示、负例）
+- [x] 测试向量由 web 项目同款 crypto-js 算法生成，双向验证
 
 ### 跨端（cross-platform-h5.md）— ✅ 通过
-- [x] 交互全部用 click / pointer 兼容事件，无 hover 依赖
-- [x] 布局自适应（flex / % / vw），无写死像素宽度
-- [x] 底部安全区使用 `var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))` 组合，配合 viewport-fit=cover
+- [x] 交互全部 click / pointer 兼容，无 hover 依赖；布局自适应；底部安全区用 `var(--safe-area-inset-bottom, env(...))` 组合
+
+### 体积
+- [x] zip 远低于 2MB 建议值（crypto-js 组件压缩后体积很小）
 
 ## 结论
 
-所有规范项通过，产物可直接上传小红书小工具容器（PC 模拟器与真机行为一致）。
+所有规范项通过，产物可直接上传小红书小工具容器；三平台解析结果与 Web 项目一致（除需联网的短链/反查场景，按容器边界提示处理）。

@@ -1,6 +1,12 @@
 /* ============================================================
- * 分享解析小工具 · 小红书 / 网易云音乐
- * 纯本地解析：不联网、无外部资源、无剪贴板 API
+ * 分享解析小工具 · 小红书 / 网易云音乐 / 抖音
+ * 与 Web 项目（findYourNetEaseCloudMusic）解析逻辑保持同步：
+ *   - 小红书：shareRedId 本地解码（Base64url + 固定密钥移位）、appuid 明文、
+ *             user_profile 主页、web_share 网页版说明
+ *   - 网易云：userid 明文、uct2（移动端 AES-ECB / PC 端 Salted EVP）、uct 旧版
+ *   - 抖音：activity_info 本地解析、aweme_id/uid/sec_uid 识别；
+ *           需要联网的部分（短链跳转、主页反查）给出提示
+ * 纯本地：不联网、无外部资源、无剪贴板 API
  * ============================================================ */
 (function () {
   'use strict';
@@ -10,13 +16,16 @@
 
   var THEME = {
     xhs: { name: '小红书', color: '#FF2442', dark: '#C9182F', light: '#FFF0F2' },
-    netease: { name: '网易云音乐', color: '#D43C33', dark: '#A82E27', light: '#FDEFED' }
+    netease: { name: '网易云音乐', color: '#D43C33', dark: '#A82E27', light: '#FDEFED' },
+    douyin: { name: '抖音', color: '#161823', dark: '#0B0C10', light: '#F2F3F5' }
   };
 
   var HISTORY_KEY = 'share_parser_history_v1';
   var currentCardUrl = '';
 
-  /* ---------- 基础工具 ---------- */
+  /* ============================================================
+   * 基础工具
+   * ============================================================ */
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -28,14 +37,24 @@
     return u.replace(/[),，。；;！!》】]+$/, '');
   }
 
-  function extractUrls(text) {
-    return (text.match(/https?:\/\/[^\s"'<>，。；;]+/gi) || []).map(cleanUrl);
-  }
-
   function nowLabel() {
     var dt = new Date();
     function p(n) { return (n < 10 ? '0' : '') + n; }
     return p(dt.getHours()) + ':' + p(dt.getMinutes());
+  }
+
+  function formatTime(sec) {
+    if (!sec) return '';
+    var d = new Date(Number(sec) * 1000);
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+      + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function toUnixSeconds(value) {
+    if (value === null || value === undefined || value === '') return undefined;
+    var parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
 
   function selectText(el) {
@@ -46,117 +65,664 @@
     sel.addRange(range);
   }
 
-  /* ---------- 小红书分享解析 ---------- */
-
-  function parseXhs(text) {
-    var d = { platform: 'xhs', type: '笔记', noteId: '', shortUrl: '', longUrl: '', xsecToken: '', author: '', title: '' };
-    var found = false;
-    var urls = extractUrls(text);
-    for (var i = 0; i < urls.length; i++) {
-      var m = urls[i].match(/xiaohongshu\.com\/(?:explore|discovery\/item)\/([0-9a-fA-F]{8,32})/);
-      if (m) { found = true; d.noteId = m[1]; d.longUrl = urls[i]; continue; }
-      if (/xhslink\.com\//.test(urls[i])) { found = true; d.shortUrl = urls[i]; }
+  function parseQuery(query) {
+    var params = {};
+    var normalized = query.charAt(0) === '?' ? query.slice(1) : query;
+    var items = normalized.split('&');
+    for (var i = 0; i < items.length; i++) {
+      if (!items[i]) continue;
+      var parts = items[i].split('=', 2);
+      params[decodeComponent(parts[0])] = parts.length > 1 ? decodeComponent(parts[1]) : '';
     }
-    if (!found) {
-      return { ok: false, reason: '未识别到小红书链接，请确认复制内容完整。\n支持：\n· xhslink.com 口令短链\n· xiaohongshu.com/explore 或 /discovery/item 笔记长链' };
+    return params;
+  }
+
+  function decodeComponent(value) {
+    try { return decodeURIComponent(value); } catch (e) { return value; }
+  }
+
+  function getMergedSearchParams(input) {
+    var params = {};
+    try {
+      var url = new URL(input);
+      var search = parseQuery(url.search);
+      for (var k in search) params[k] = search[k];
+      if (url.hash.indexOf('?') !== -1) {
+        var hashQuery = url.hash.split('?', 2)[1] || '';
+        var hashParams = parseQuery('?' + hashQuery);
+        for (var hk in hashParams) {
+          if (!(hk in params)) params[hk] = hashParams[hk];
+        }
+      }
+    } catch (e) {}
+    return params;
+  }
+
+  /* ============================================================
+   * Crypto 工具（crypto-js 组件由 index.html 按依赖顺序加载）
+   * ============================================================ */
+
+  function wordArrayToBytes(wa) {
+    var bytes = [];
+    for (var i = 0; i < wa.sigBytes; i++) {
+      bytes.push((wa.words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff);
     }
+    return bytes;
+  }
 
-    var tok = text.match(/xsec_token=([0-9A-Za-z_\-]+)/);
-    if (tok) d.xsecToken = tok[1];
+  function bytesToWordArray(bytes) {
+    var words = [];
+    for (var i = 0; i < bytes.length; i++) {
+      words[i >>> 2] |= bytes[i] << (24 - (i % 4) * 8);
+    }
+    return CryptoJS.lib.WordArray.create(words, bytes.length);
+  }
 
+  function bytesToAscii(bytes) {
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return s;
+  }
+
+  function wordArrayToUtf8(wa) {
+    var s = '';
+    for (var i = 0; i < wa.sigBytes; i++) {
+      s += String.fromCharCode((wa.words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff);
+    }
+    return s;
+  }
+
+  // AES-ECB / PKCS7 解密（与 web 项目 lib/platforms/netease/decode.ts 一致）
+  function decryptEcbPkcs7(ciphertext, keyText) {
+    var key = CryptoJS.enc.Utf8.parse(keyText);
+    var cipherParams = CryptoJS.lib.CipherParams.create({
+      ciphertext: CryptoJS.enc.Base64.parse(ciphertext),
+    });
+    return CryptoJS.AES.decrypt(cipherParams, key, {
+      mode: CryptoJS.mode.ECB,
+      padding: CryptoJS.pad.Pkcs7,
+    }).toString(CryptoJS.enc.Utf8).trim();
+  }
+
+  // OpenSSL EVP_BytesToKey（MD5 派生），PC 端 uct2 用
+  function evpBytesToKey(password, salt, keyLength) {
+    keyLength = keyLength || 32;
+    var ivLength = 16;
+    var result = [];
+    var previous = [];
+    while (result.length < keyLength + ivLength) {
+      var digestInput = bytesToWordArray(previous.concat(password).concat(salt));
+      previous = wordArrayToBytes(CryptoJS.MD5(digestInput));
+      result = result.concat(previous);
+    }
+    return {
+      key: bytesToWordArray(result.slice(0, keyLength)),
+      iv: bytesToWordArray(result.slice(keyLength, keyLength + ivLength)),
+    };
+  }
+
+  /* ============================================================
+   * 小红书（与 web 项目 lib/platforms/xiaohongshu/* 同步）
+   * ============================================================ */
+
+  var XHS_SHARE_RED_ID_KEY = '262035496752980663974569';
+  var XHS_HOME_PREFIX = 'https://www.xiaohongshu.com/user/profile/';
+  var XHS_SHORT_HOSTS = ['xhslink.com', 'xhslink.cn'];
+  var XHS_FULL_URL_PATTERN = /https?:\/\/(?:www\.)?xiaohongshu\.com\/[A-Za-z0-9_.~!$&'()*+,;=:@/?%-]*/g;
+  var XHS_SHORT_URL_PATTERN = /https?:\/\/xhslink\.(?:com|cn)\/[A-Za-z0-9_./-]+/g;
+
+  function isXhsHost(hostname) {
+    return hostname === 'xiaohongshu.com' || hostname === 'www.xiaohongshu.com';
+  }
+
+  function isXhsShortHost(hostname) {
+    return XHS_SHORT_HOSTS.indexOf(hostname) !== -1;
+  }
+
+  function findXhsUrl(input) {
+    var trimmed = input.trim();
+    try {
+      var url = new URL(trimmed);
+      if (isXhsHost(url.hostname) || isXhsShortHost(url.hostname)) return url.toString();
+      return null;
+    } catch (e) {}
+
+    var clean = function (raw) { return raw.replace(/[，。、；）)」』\]]+$/, ''); };
+    var fullLinks = (trimmed.match(XHS_FULL_URL_PATTERN) || []).map(clean);
+    var shortLinks = (trimmed.match(XHS_SHORT_URL_PATTERN) || []).map(clean);
+
+    var seen = {};
+    var all = fullLinks.concat(shortLinks);
+    for (var i = 0; i < all.length; i++) {
+      if (!seen[all[i]]) { seen[all[i]] = true; return all[i]; }
+    }
+    return null;
+  }
+
+  function parseXhsUrl(targetUrl) {
+    var url = new URL(targetUrl);
+    var segments = url.pathname.split('/').filter(Boolean);
+    var noteId = null;
+    var profileUserId = null;
+
+    if (segments[0] === 'user') {
+      profileUserId = segments[1] === 'profile' ? segments[2] || null : segments[1] || null;
+    } else if (segments[0] === 'discovery' && segments[1] === 'item') {
+      noteId = segments[2] || null;
+    } else if (segments[0] === 'explore' || segments[0] === 'share') {
+      noteId = segments[1] || null;
+    }
+    return { url: url, noteId: noteId, profileUserId: profileUserId };
+  }
+
+  function classifyXhsLink(url, noteId, profileUserId) {
+    if (profileUserId) return 'user_profile';
+    var params = url.searchParams;
+    if (params.get('shareRedId')) return 'app_share_encrypted';
+    if (params.get('appuid')) return 'app_share_plain';
+    if (noteId) return 'web_share';
+    return 'other';
+  }
+
+  // shareRedId → 分享者用户 ID（纯本地，与 web 项目 decode.ts 一致）
+  function decodeShareRedId(shareRedId) {
+    try {
+      var raw = wordArrayToUtf8(CryptoJS.enc.Base64url.parse(shareRedId));
+      if (raw.length !== XHS_SHARE_RED_ID_KEY.length) return null;
+      var userId = '';
+      for (var i = 0; i < raw.length; i++) {
+        userId += String.fromCharCode(raw.charCodeAt(i) - Number(XHS_SHARE_RED_ID_KEY[i]));
+      }
+      userId = userId.toLowerCase();
+      return /^[0-9a-f]{24}$/.test(userId) ? userId : null;
+    } catch (e) { return null; }
+  }
+
+  // 脱敏：抹掉分享者参数，其余原样保留（字符串级替换，保持原始编码）
+  function stripXhsSharerParams(rawUrl) {
+    var out = rawUrl.replace(/[?&](shareRedId|appuid)=[^&]*/g, function (match) {
+      return match.indexOf('?') === 0 ? '?' : '';
+    });
+    return out.replace(/\?&/g, '?').replace(/[?&]$/, '');
+  }
+
+  var XHS_LINK_TYPE_LABEL = {
+    user_profile: '用户主页链接',
+    app_share_encrypted: 'App 分享（加密 shareRedId）',
+    app_share_plain: 'App 分享（明文 appuid）',
+    web_share: '网页版分享',
+    other: '其他链接'
+  };
+
+  // 附加信息：从分享文案里提取作者 / 标题（web 项目之外的本地增强）
+  function extractXhsTextMeta(text) {
+    var author = '';
+    var title = '';
     var a = text.match(/([^\s\n]{1,30})发布了一篇(?:小红书)?笔记/);
-    if (a) d.author = a[1];
+    if (a) author = a[1];
     else {
       var a2 = text.match(/(?:作者|博主)\s*[：:]\s*([^\s\n]{1,30})/);
-      if (a2) d.author = a2[1];
+      if (a2) author = a2[1];
     }
-
     var ti = text.match(/(?:标题|笔记标题)\s*[：:]\s*([^\n]{1,60})/);
     if (ti) {
-      d.title = ti[1].trim();
+      title = ti[1].trim();
     } else {
       var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) {
         return l && !/^https?:/i.test(l) && !/发布了一篇/.test(l) && !/^(复制本条信息|打开|来自|小红书)/.test(l);
       });
       for (var j = 0; j < lines.length; j++) {
-        if (/[\u4e00-\u9fa5]/.test(lines[j]) && lines[j].length > 2) { d.title = lines[j].slice(0, 60); break; }
+        if (/[\u4e00-\u9fa5]/.test(lines[j]) && lines[j].length > 2) { title = lines[j].slice(0, 60); break; }
       }
     }
-
-    if (/视频/i.test(text) && !/图文/i.test(text)) d.type = '视频笔记';
-    else if (/图文|图片/i.test(text)) d.type = '图文笔记';
-    return { ok: true, data: d };
+    var type = '笔记';
+    if (/视频/i.test(text) && !/图文/i.test(text)) type = '视频笔记';
+    else if (/图文|图片/i.test(text)) type = '图文笔记';
+    return { author: author, title: title, type: type };
   }
 
-  /* ---------- 网易云音乐分享解析 ---------- */
-
-  function parseNetease(text) {
-    var d = { platform: 'netease', type: '', id: '', url: '', name: '', artist: '', nameLine: '', raw: '' };
-    var found = false;
-    var patterns = [
-      { type: '单曲', re: /music\.163\.com\/(?:#\/)?song(?:\/media\/outer\/url)?\?id=(\d+)/i },
-      { type: '歌单', re: /music\.163\.com\/(?:#\/)?playlist\?id=(\d+)/i },
-      { type: '专辑', re: /music\.163\.com\/(?:#\/)?album\?id=(\d+)/i },
-      { type: '电台', re: /music\.163\.com\/(?:#\/)?djradio\?id=(\d+)/i },
-      { type: 'MV', re: /music\.163\.com\/(?:#\/)?mv\?id=(\d+)/i },
-      { type: '歌手', re: /music\.163\.com\/(?:#\/)?artist\?id=(\d+)/i }
-    ];
-    var urls = extractUrls(text);
-    for (var i = 0; i < urls.length && !found; i++) {
-      for (var j = 0; j < patterns.length; j++) {
-        var m = urls[i].match(patterns[j].re);
-        if (m) { found = true; d.type = patterns[j].type; d.id = m[1]; d.url = urls[i]; break; }
-      }
-    }
+  function resolveXhs(text) {
+    var found = findXhsUrl(text);
     if (!found) {
-      var mpt = text.match(/#小程序:\/\/网易云音乐\/[^\s\n]+/);
-      if (mpt) {
-        return { ok: true, data: { platform: 'netease', type: '小程序口令', id: '', url: '', name: '', artist: '', nameLine: '', raw: mpt[0] } };
-      }
-      return { ok: false, reason: '未识别到网易云音乐链接。\n支持 music.163.com 的：\n· /song 单曲\n· /playlist 歌单\n· /album 专辑\n· /djradio 电台' };
+      return { ok: false, reason: '未识别到小红书链接，请确认复制内容完整。\n支持：\n· xhslink.com / xhslink.cn 口令短链\n· xiaohongshu.com 笔记长链（explore / discovery/item / share / user）' };
     }
 
+    var targetUrl = found;
+    var hostname = '';
+    try { hostname = new URL(targetUrl).hostname; } catch (e) {}
+
+    var data = {
+      platform: 'xhs',
+      targetUrl: targetUrl,
+      sourceType: isDirectUrlInput(text) ? 'full_url' : 'share_text'
+    };
+
+    // 短链：需联网跳转拿参数，容器内不可用
+    if (isXhsShortHost(hostname)) {
+      data.needsNetwork = true;
+      data.needsNetworkReason = 'xhslink 口令短链需要联网跳转后才能拿到分享者参数，小工具内不联网。\n可换用 App 内「复制链接」得到的完整链接，或到网站版解析。';
+      return { ok: true, data: data };
+    }
+
+    var parsed = parseXhsUrl(targetUrl);
+    var url = parsed.url;
+    var noteId = parsed.noteId;
+    var profileUserId = parsed.profileUserId;
+    var params = url.searchParams;
+    var linkType = classifyXhsLink(url, noteId, profileUserId);
+    var meta = extractXhsTextMeta(text);
+
+    data.noteId = noteId || undefined;
+    data.linkType = linkType;
+    data.linkTypeLabel = XHS_LINK_TYPE_LABEL[linkType] || linkType;
+    data.cleanUrl = stripXhsSharerParams(targetUrl);
+    data.shareTime = toUnixSeconds(params.get('apptime'));
+    data.shareChannel = params.get('xhsshare') || undefined;
+    data.shareEventId = params.get('share_id') || undefined;
+    data.xsecToken = params.get('xsec_token') || undefined;
+    data.appVersion = params.get('app_version') || undefined;
+    data.author = meta.author || undefined;
+    data.title = meta.title || undefined;
+    data.type = meta.type;
+
+    if (linkType === 'user_profile') {
+      data.userId = profileUserId || undefined;
+      data.source = 'user_profile';
+      data.algorithm = '链接里直接带着';
+    } else if (linkType === 'app_share_encrypted') {
+      data.userId = decodeShareRedId(params.get('shareRedId') || '') || undefined;
+      data.source = 'shareRedId';
+      data.algorithm = data.userId ? '从链接参数 shareRedId 解码出来的' : '链接里的分享者信息没法解析';
+      if (!data.userId) data.noSharerReason = '链接里的 shareRedId 无法解析（可能不是这套算法编码的）';
+    } else if (linkType === 'app_share_plain') {
+      data.userId = params.get('appuid') || undefined;
+      data.source = 'appuid';
+      data.algorithm = '链接里直接带着';
+    } else if (linkType === 'web_share') {
+      data.noSharerReason = '网页版/PC 分享链接不携带分享者信息（平台设计），只有 App 内分享的链接（shareRedId/appuid）才能解出分享者';
+      data.source = 'web_share';
+      data.algorithm = '网页版链接不携带分享者信息';
+    } else {
+      return { ok: false, reason: '这个链接暂时还解析不了' };
+    }
+
+    if (data.userId) data.profileUrl = XHS_HOME_PREFIX + data.userId;
+    return { ok: true, data: data };
+  }
+
+  /* ============================================================
+   * 网易云音乐（与 web 项目 lib/platforms/netease/* 同步）
+   * ============================================================ */
+
+  var LEGACY_UCT_KEY = 'y6oV5go8h5Vg31dSetYA3V1dZ2JGG3WF';
+  var UCT2_KEY = 'JwDUI7QfKebyIhZwcWAJu1172eV2CgCD';
+  var OPENSSL_SALTED_PREFIX = 'Salted__';
+  var NETEASE_HOME_PREFIX = 'https://music.163.com/#/user/home?id=';
+  var NETEASE_SHORT_HOST = '163cn.tv';
+  var NETEASE_URL_PATTERN = /https?:\/\/(?:music\.163\.com|y\.music\.163\.com|163cn\.tv)\/[^\s，。、；：！？）)」』\]]*/;
+
+  function findNeteaseUrl(input) {
+    var trimmed = input.trim();
+    try {
+      var url = new URL(trimmed);
+      if (
+        url.hostname === 'music.163.com' ||
+        url.hostname === 'y.music.163.com' ||
+        url.hostname === NETEASE_SHORT_HOST
+      ) {
+        return url.toString();
+      }
+      return null;
+    } catch (e) {}
+
+    var match = trimmed.match(NETEASE_URL_PATTERN);
+    if (!match) return null;
+    return match[0].replace(/[，。、；）)」』\]]+$/, '');
+  }
+
+  function decodeLegacyUct(uct) {
+    var userId = decryptEcbPkcs7(uct, LEGACY_UCT_KEY);
+    if (!userId) return null;
+    return { userId: userId, source: 'uct', algorithm: '从分享链接里找到' };
+  }
+
+  function isSaltedCiphertext(value) {
+    try {
+      var bytes = wordArrayToBytes(CryptoJS.enc.Base64.parse(value));
+      return bytesToAscii(bytes.slice(0, OPENSSL_SALTED_PREFIX.length)) === OPENSSL_SALTED_PREFIX;
+    } catch (e) { return false; }
+  }
+
+  function decodeMobileUct2(uct2) {
+    var userId = decryptEcbPkcs7(uct2, UCT2_KEY);
+    if (!userId) return null;
+    return { userId: userId, source: 'uct2-mobile', algorithm: '从分享链接里找到' };
+  }
+
+  function decodePcUct2(uct2) {
+    var encrypted = wordArrayToBytes(CryptoJS.enc.Base64.parse(uct2));
+    if (bytesToAscii(encrypted.slice(0, OPENSSL_SALTED_PREFIX.length)) !== OPENSSL_SALTED_PREFIX) return null;
+    var salt = encrypted.slice(8, 16);
+    var ciphertext = bytesToWordArray(encrypted.slice(16));
+    var password = wordArrayToBytes(CryptoJS.enc.Utf8.parse(UCT2_KEY));
+    var derived = evpBytesToKey(password, salt);
+    var plaintext = CryptoJS.AES.decrypt(
+      CryptoJS.lib.CipherParams.create({ ciphertext: ciphertext }),
+      derived.key,
+      { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 },
+    );
+    var userId = plaintext.toString(CryptoJS.enc.Utf8).trim();
+    if (!userId) return null;
+    return { userId: userId, source: 'uct2-pc', algorithm: '从分享链接里找到' };
+  }
+
+  function decodeUct2(uct2) {
+    if (isSaltedCiphertext(uct2)) return decodePcUct2(uct2);
+    return decodeMobileUct2(uct2);
+  }
+
+  // 脱敏：删掉 search 和 hash 里的分享者参数（userid/uct2/uct），内容 ID 保留
+  function stripNeteaseSharerParams(input) {
+    var removed = [];
+    var url;
+    try { url = new URL(input); } catch (e) { return { cleanUrl: input, removed: removed }; }
+
+    var search = new URLSearchParams(url.search);
+    ['userid', 'uct2', 'uct'].forEach(function (key) {
+      if (search.has(key)) { search.delete(key); removed.push(key); }
+    });
+    url.search = search.toString();
+
+    if (url.hash.indexOf('?') !== -1) {
+      var hashParts = url.hash.split('?', 2);
+      var hashParams = new URLSearchParams(hashParts[1] || '');
+      var hashChanged = false;
+      ['userid', 'uct2', 'uct'].forEach(function (key) {
+        if (hashParams.has(key)) { hashParams.delete(key); removed.push(key); hashChanged = true; }
+      });
+      if (hashChanged) url.hash = hashParts[0] + '?' + hashParams.toString();
+    }
+    return { cleanUrl: url.toString(), removed: removed };
+  }
+
+  // 内容类型 + 名称（从文案里提取）
+  function extractNeteaseMeta(text, url) {
+    var meta = { type: '', nameLine: '' };
+    var patterns = [
+      { type: '单曲', re: /\/song(?:\/media\/outer\/url)?(?:\?|$|\/)/ },
+      { type: '歌单', re: /\/playlist(?:\?|$)/ },
+      { type: '专辑', re: /\/album(?:\?|$)/ },
+      { type: '电台', re: /\/djradio(?:\?|$)/ },
+      { type: 'MV', re: /\/mv(?:\?|$)/ },
+      { type: '歌手', re: /\/artist(?:\?|$)/ }
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+      if (patterns[i].re.test(url)) { meta.type = patterns[i].type; break; }
+    }
     var tl = text.match(/分享(单曲|歌单|专辑|电台|主播电台)/);
-    if (tl) d.type = tl[1] === '主播电台' ? '电台' : tl[1];
+    if (tl) meta.type = tl[1] === '主播电台' ? '电台' : tl[1];
 
     var nm = text.match(/([^\n《》]{1,40})\s*《([^》]{1,60})》/);
     if (nm) {
-      d.artist = nm[1].replace(/^[\s：:]+/, '').trim();
-      d.name = nm[2].trim();
-      d.nameLine = d.artist + '《' + d.name + '》';
+      var artist = nm[1].replace(/^[\s：:]+/, '').trim();
+      meta.nameLine = artist + '《' + nm[2].trim() + '》';
     } else {
       var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
       for (var k = 0; k < lines.length; k++) {
-        var clean = lines[k]
-          .replace(/https?:\/\/\S+/g, '')
-          .replace(/[（(].*?[)）]/g, '')
-          .trim();
+        var clean = lines[k].replace(/https?:\/\/\S+/g, '').replace(/[（(].*?[)）]/g, '').trim();
         if (!clean || clean.length < 2) continue;
         if (/^分享/.test(clean) || /^\(?@网易云音乐/.test(clean)) continue;
         if (/^我分享了一首歌/.test(clean)) {
           var sp = clean.match(/[：:]\s*(.+)/);
           if (sp) {
             var dash = sp[1].match(/^\s*(.+?)\s*[-—–]\s*(.+?)\s*$/);
-            if (dash) {
-              d.name = dash[1].trim();
-              d.artist = dash[2].trim();
-              d.nameLine = d.name + ' - ' + d.artist;
-            } else {
-              d.name = sp[1].trim();
-              d.nameLine = d.name;
-            }
+            meta.nameLine = dash ? dash[1].trim() + ' - ' + dash[2].trim() : sp[1].trim();
           }
           break;
         }
-        d.name = clean.slice(0, 60);
-        d.nameLine = d.name;
+        meta.nameLine = clean.slice(0, 60);
         break;
       }
     }
-    return { ok: true, data: d };
+    return meta;
   }
 
-  /* ---------- 结果渲染 ---------- */
+  function resolveNetease(text) {
+    var found = findNeteaseUrl(text);
+    if (!found) {
+      return { ok: false, reason: '未识别到网易云音乐链接。\n支持 music.163.com / y.music.163.com：\n· /song 单曲\n· /playlist 歌单\n· /album 专辑\n· /djradio 电台\n· /mv MV' };
+    }
+
+    var targetUrl = found;
+    var data = { platform: 'netease', targetUrl: targetUrl };
+
+    var hostname = '';
+    try { hostname = new URL(targetUrl).hostname; } catch (e) {}
+
+    // 163cn.tv 短链：需联网跳转，容器内不可用
+    if (hostname === NETEASE_SHORT_HOST) {
+      data.needsNetwork = true;
+      data.needsNetworkReason = '163cn.tv 口令短链需要联网跳转后才能拿到分享者参数，小工具内不联网。\n可换用 App 内「复制链接」得到的完整链接，或到网站版解析。';
+      return { ok: true, data: data };
+    }
+
+    var params = getMergedSearchParams(targetUrl);
+    var pageId = params.id;
+    var isUserHome = targetUrl.indexOf('/user/home') !== -1;
+    if (pageId) data.noteId = pageId;
+
+    if (isUserHome && pageId) {
+      data.userId = pageId;
+      data.source = 'userid';
+      data.algorithm = '链接里直接带着';
+      data.linkTypeLabel = '用户主页链接';
+    } else if (params.userid) {
+      data.userId = params.userid;
+      data.source = 'userid';
+      data.algorithm = '链接里直接带着';
+    } else if (params.uct2) {
+      var decoded2 = decodeUct2(params.uct2);
+      if (decoded2) {
+        data.userId = decoded2.userId;
+        data.source = decoded2.source;
+        data.algorithm = decoded2.algorithm;
+        data.uctKind = decoded2.source === 'uct2-pc' ? 'PC 端 uct2（Salted AES-256）' : '移动端 uct2（AES-128）';
+      } else {
+        data.noSharerReason = '这条链接里没找到分享者信息（uct2 无法解析）';
+      }
+    } else if (params.uct) {
+      var decoded1 = decodeLegacyUct(params.uct);
+      if (decoded1) {
+        data.userId = decoded1.userId;
+        data.source = decoded1.source;
+        data.algorithm = decoded1.algorithm;
+        data.uctKind = '旧版 uct（AES-128）';
+      } else {
+        data.noSharerReason = '这条链接里没找到分享者信息（uct 无法解析）';
+      }
+    } else {
+      data.noSharerReason = '这条链接里没找到分享者信息（链接不含 userid / uct2 / uct 分享者参数）';
+      data.source = 'none';
+      data.algorithm = '链接里没有分享者信息';
+    }
+
+    if (data.userId) data.profileUrl = NETEASE_HOME_PREFIX + data.userId;
+
+    var meta = extractNeteaseMeta(text, targetUrl);
+    data.type = meta.type || undefined;
+    data.nameLine = meta.nameLine || undefined;
+
+    var stripped = stripNeteaseSharerParams(targetUrl);
+    data.cleanUrl = stripped.cleanUrl;
+    data.removedParams = stripped.removed;
+    if (!data.removedParams.length) data.removedParams = undefined;
+
+    return { ok: true, data: data };
+  }
+
+  /* ============================================================
+   * 抖音（与 web 项目 lib/platforms/douyin/* 同步，仅本地可算部分）
+   * ============================================================ */
+
+  var DOUYIN_HOME_PREFIX = 'https://www.douyin.com/user/';
+  var DOUYIN_VIDEO_PREFIX = 'https://www.douyin.com/video/';
+  var DOUYIN_SHORT_HOSTS = ['v.douyin.com'];
+  var DOUYIN_HOSTS = ['douyin.com', 'www.douyin.com', 'iesdouyin.com', 'www.iesdouyin.com'];
+  var DOUYIN_URL_PATTERN = /https?:\/\/[^\s，。；：！？、（）【】《》“”‘’<>"']+/g;
+  var DOUYIN_AWEME_ID = /^\d{19}$/;
+  var DOUYIN_UID = /^\d{9,12}$/;
+  var DOUYIN_SEC_UID = /^MS4wLjAB[A-Za-z0-9_-]{20,}$/;
+
+  function isDouyinHost(hostname) {
+    return DOUYIN_HOSTS.indexOf(hostname) !== -1 || DOUYIN_SHORT_HOSTS.indexOf(hostname) !== -1;
+  }
+
+  function identifyDouyinInput(input) {
+    var trimmed = input.trim();
+
+    if (DOUYIN_AWEME_ID.test(trimmed)) return { kind: 'aweme_id', awemeId: trimmed };
+    if (DOUYIN_SEC_UID.test(trimmed)) return { kind: 'sec_uid', secUid: trimmed };
+    if (DOUYIN_UID.test(trimmed)) return { kind: 'uid', uid: trimmed };
+
+    var urls = (trimmed.match(DOUYIN_URL_PATTERN) || []).filter(function (raw) {
+      try { return isDouyinHost(new URL(raw).hostname); } catch (e) { return false; }
+    });
+    var shortUrl = null;
+    for (var i = 0; i < urls.length; i++) {
+      if (urls[i].indexOf('v.douyin.com') !== -1) { shortUrl = urls[i]; break; }
+    }
+    var url = shortUrl || urls[0];
+    if (!url) return null;
+
+    try {
+      var parsed = new URL(url);
+      var segments = parsed.pathname.split('/').filter(Boolean);
+
+      if (parsed.hostname === 'v.douyin.com') return { kind: 'short_link', url: url };
+      if (segments[0] === 'user' && segments[1]) return { kind: 'user_url', url: url, secUid: segments[1] };
+
+      var videoMatch = url.match(/\/(?:video|share\/video)\/(\d{19})/);
+      if (videoMatch) return { kind: 'video_url', url: url, awemeId: videoMatch[1] };
+    } catch (e) { return null; }
+
+    return null;
+  }
+
+  // activity_info 是 URL 编码的 JSON（兼容双重编码）
+  function parseActivityInfo(raw) {
+    if (!raw) return null;
+    var candidates = [raw];
+    try { candidates.push(decodeURIComponent(raw)); } catch (e) {}
+
+    for (var i = 0; i < candidates.length; i++) {
+      try {
+        var obj = JSON.parse(candidates[i]);
+        if (!obj || typeof obj !== 'object') continue;
+        return {
+          shareTime: typeof obj.social_share_time === 'string' ? obj.social_share_time : undefined,
+          authorId: typeof obj.social_author_id === 'string' ? obj.social_author_id : undefined,
+          shareId: typeof obj.social_share_id === 'string' ? obj.social_share_id : undefined,
+          shareUserId: typeof obj.social_share_user_id === 'string' ? obj.social_share_user_id : undefined,
+        };
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  // 脱敏：抹掉 activity_info / u_code（字符串级）
+  function stripDouyinSharerParams(rawUrl) {
+    var out = rawUrl;
+    var keys = ['activity_info', 'u_code'];
+    for (var i = 0; i < keys.length; i++) {
+      out = out.replace(new RegExp('[?&]' + keys[i] + '=[^&]*', 'g'), function (match) {
+        return match.indexOf('?') === 0 ? '?' : '';
+      });
+    }
+    return out.replace(/\?&/g, '?').replace(/[?&]$/, '');
+  }
+
+  var DOUYIN_KIND_LABEL = {
+    short_link: '口令短链',
+    video_url: '视频链接',
+    user_url: '用户主页链接',
+    aweme_id: '裸视频 ID',
+    uid: '裸用户 ID',
+    sec_uid: '裸主页 ID',
+    video: '视频链接'
+  };
+
+  function resolveDouyin(text) {
+    var found = identifyDouyinInput(text);
+    if (!found) {
+      return { ok: false, reason: '未识别到抖音内容。\n支持：\n· v.douyin.com 口令短链\n· douyin.com/video 视频链接\n· douyin.com/user 主页链接\n· 裸 aweme_id（19 位）\n· 裸 uid / sec_uid' };
+    }
+
+    var targetUrl = found.url || '';
+    var data = {
+      platform: 'douyin',
+      targetUrl: targetUrl || undefined,
+      linkType: found.kind,
+      linkTypeLabel: DOUYIN_KIND_LABEL[found.kind] || found.kind
+    };
+
+    // 短链：第一跳 Location 需要联网，容器内不可用
+    if (found.kind === 'short_link') {
+      data.needsNetwork = true;
+      data.needsNetworkReason = 'v.douyin.com 短链需要联网解析第一跳跳转（activity_info / u_code 都在这一跳），小工具内不联网。\n可换用视频页完整链接，或到网站版解析。';
+      return { ok: true, data: data };
+    }
+
+    // 用户身份：需要在线接口反查，容器内不可用
+    if (found.kind === 'uid' || found.kind === 'sec_uid' || found.kind === 'user_url') {
+      data.uid = found.uid;
+      data.secUid = found.secUid;
+      data.needsNetwork = true;
+      data.needsNetworkReason = found.kind === 'user_url'
+        ? '用户主页链接本身不携带分享者信息；确认用户信息需在线查询接口，小工具内不可用。'
+        : '裸用户 ID 需要在线查询接口反查用户信息，小工具内不联网。\n可粘贴包含 activity_info 的完整视频分享链接，或到网站版解析。';
+      return { ok: true, data: data };
+    }
+
+    var awemeId = found.awemeId || ((targetUrl.match(/\/(?:video|share\/video)\/(\d{19})/) || [])[1] || undefined);
+    if (!awemeId) return { ok: false, reason: '这个链接暂时还解析不了' };
+
+    var videoUrl = targetUrl || DOUYIN_VIDEO_PREFIX + awemeId;
+    var targetParams = null;
+    try { targetParams = targetUrl ? new URL(targetUrl).searchParams : null; } catch (e) {}
+
+    var activityInfo = parseActivityInfo(targetParams ? targetParams.get('activity_info') : null);
+
+    data.noteId = awemeId;
+    data.videoUrl = videoUrl;
+    data.cleanUrl = stripDouyinSharerParams(videoUrl);
+    data.shareChannel = targetParams ? targetParams.get('tt_from') || undefined : undefined;
+    data.shareTime = toUnixSeconds(activityInfo && activityInfo.shareTime);
+    data.shareEventId = activityInfo && activityInfo.shareId;
+
+    if (activityInfo && activityInfo.shareUserId) {
+      data.userId = activityInfo.shareUserId;
+      data.source = 'activity_info';
+      data.algorithm = '从链接参数 activity_info 里解出的分享者';
+      data.profileHint = '分享者主页需在线反查，小工具内不可用';
+      data.removedParams = ['activity_info', 'u_code'].filter(function (key) {
+        return targetParams && targetParams.get(key) !== null;
+      });
+    } else {
+      data.noSharerReason = '这条抖音分享链接没有携带分享者信息（老版分享/私信转发），无法获取分享者';
+      data.source = found.kind === 'aweme_id' ? 'aweme_id' : 'video';
+      data.algorithm = '链接里没有分享者信息';
+    }
+
+    return { ok: true, data: data };
+  }
+
+  function isDirectUrlInput(input) {
+    try { new URL(input.trim()); return true; } catch (e) { return false; }
+  }
+
+  /* ============================================================
+   * 结果渲染
+   * ============================================================ */
 
   function badgeHtml(platform, label) {
     var t = THEME[platform] || THEME.xhs;
@@ -169,17 +735,74 @@
       + '</div><div class="field-value' + (selectable ? ' selectable' : '') + '">' + valueHtml + '</div></div>';
   }
 
+  function linkHtml(url, platform) {
+    return '<span class="link" data-copy="' + esc(url) + '">' + esc(url) + '</span>';
+  }
+
+  function sharerBlockHtml(data) {
+    if (!data.userId) return '';
+    var html = '<div class="sharer-box">';
+    html += '<div class="sharer-label">分享者 ID</div>';
+    html += '<div class="sharer-id selectable">' + esc(data.userId) + '</div>';
+    if (data.profileUrl) {
+      html += '<div class="sharer-url">主页：' + linkHtml(data.profileUrl, data.platform) + '</div>';
+    } else if (data.profileHint) {
+      html += '<div class="sharer-url">主页：' + esc(data.profileHint) + '</div>';
+    }
+    if (data.algorithm) html += '<div class="sharer-algo">' + esc(data.algorithm) + '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function cleanUrlBlockHtml(data) {
+    if (!data.cleanUrl) return '';
+    var label = '脱敏链接';
+    var tip = '已抹除分享者参数，可直接转发';
+    if (data.removedParams && data.removedParams.length) {
+      label += '（已抹 ' + esc(data.removedParams.join('、')) + '）';
+    }
+    return fieldHtml(label, linkHtml(data.cleanUrl, data.platform), true)
+      + '<div class="tip">' + tip + '：点击链接自动选中，长按可「复制」</div>';
+  }
+
+  function metaRowsHtml(data) {
+    var html = '';
+    if (data.linkTypeLabel) html += fieldHtml('链接类型', esc(data.linkTypeLabel));
+    if (data.noteId) html += fieldHtml('内容 ID', '<code>' + esc(data.noteId) + '</code>', true);
+    if (data.videoUrl && data.videoUrl !== data.targetUrl) html += fieldHtml('视频链接', linkHtml(data.videoUrl, data.platform), true);
+    if (data.xsecToken) html += fieldHtml('xsec_token', '<code>' + esc(data.xsecToken) + '</code>', true);
+    if (data.shareTime) html += fieldHtml('分享时间', esc(formatTime(data.shareTime)), true);
+    if (data.shareChannel) html += fieldHtml('分享渠道', esc(data.shareChannel), true);
+    if (data.shareEventId) html += fieldHtml('分享事件', esc(data.shareEventId), true);
+    if (data.appVersion) html += fieldHtml('App 版本', esc(data.appVersion), true);
+    if (data.uctKind) html += fieldHtml('加密方式', esc(data.uctKind));
+    return html;
+  }
+
+  function noticeBlockHtml(data) {
+    if (data.needsNetwork) {
+      return '<div class="notice notice-warn">📡 ' + esc(data.needsNetworkReason).replace(/\n/g, '<br>') + '</div>';
+    }
+    if (data.noSharerReason) {
+      return '<div class="notice">ℹ️ ' + esc(data.noSharerReason).replace(/\n/g, '<br>') + '</div>';
+    }
+    return '';
+  }
+
   function renderXhs(d, fromHistory) {
     var box = $('#xhs-result');
     box.setAttribute('data-platform', 'xhs');
-    var html = '<div class="result-head">' + badgeHtml('xhs', '小红书 · ' + d.type)
+    var headLabel = '小红书 · ' + (d.type || d.linkTypeLabel || '笔记');
+    var html = '<div class="result-head">' + badgeHtml('xhs', headLabel)
       + '<span class="result-time">' + nowLabel() + '</span></div>';
-    html += fieldHtml('笔记ID', '<code>' + esc(d.noteId) + '</code>', true);
+    html += noticeBlockHtml(d);
+    html += sharerBlockHtml(d);
     if (d.author) html += fieldHtml('作者', esc(d.author), true);
     if (d.title) html += fieldHtml('标题', esc(d.title), true);
-    if (d.longUrl) html += fieldHtml('笔记链接', '<span class="link" data-copy="' + esc(d.longUrl) + '">' + esc(d.longUrl) + '</span>', true);
-    if (d.shortUrl) html += fieldHtml('口令短链', '<span class="link" data-copy="' + esc(d.shortUrl) + '">' + esc(d.shortUrl) + '</span>', true);
-    if (d.xsecToken) html += fieldHtml('xsec_token', '<code>' + esc(d.xsecToken) + '</code>', true);
+    if (d.shortUrl) html += fieldHtml('口令短链', linkHtml(d.shortUrl, 'xhs'), true);
+    if (d.targetUrl) html += fieldHtml('原链接', linkHtml(d.targetUrl, 'xhs'), true);
+    html += metaRowsHtml(d);
+    html += cleanUrlBlockHtml(d);
     html += '<div class="result-actions">'
       + '<button type="button" class="btn btn-xhs" id="xhs-open">在小红书打开</button>'
       + '<button type="button" class="btn btn-ghost" id="xhs-card">生成分享卡片</button>'
@@ -192,36 +815,57 @@
     if (openBtn) openBtn.addEventListener('click', function () { openXhsNote(d); });
     $('#xhs-card').addEventListener('click', function () { makeCard('xhs', d); });
     if (!fromHistory) {
-      addHistory({ platform: 'xhs', label: (d.title || '小红书笔记') + (d.author ? ' · ' + d.author : ''), time: nowLabel(), d: d });
+      addHistory({ platform: 'xhs', label: (d.title || d.userId || '小红书笔记') + (d.author ? ' · ' + d.author : ''), time: nowLabel(), d: d });
     }
   }
 
   function renderNetease(d, fromHistory) {
     var box = $('#net-result');
     box.setAttribute('data-platform', 'netease');
-    var html = '<div class="result-head">' + badgeHtml('netease', '网易云音乐 · ' + d.type)
+    var headLabel = '网易云音乐' + (d.type ? ' · ' + d.type : '');
+    var html = '<div class="result-head">' + badgeHtml('netease', headLabel)
       + '<span class="result-time">' + nowLabel() + '</span></div>';
-    if (d.type === '小程序口令') {
-      html += '<div class="field"><div class="field-label">口令</div><div class="field-value selectable">' + esc(d.raw) + '</div></div>';
-      html += '<div class="tip">小程序口令无法离线解析：请先在微信中打开口令，再复制其中的 music.163.com 链接回来解析</div>';
-    } else {
-      html += fieldHtml('ID', '<code>' + esc(d.id) + '</code>', true);
-      if (d.nameLine) html += fieldHtml(d.type === '单曲' ? '歌曲' : '名称', esc(d.nameLine), true);
-      if (d.url) html += fieldHtml('链接', '<span class="link" data-copy="' + esc(d.url) + '">' + esc(d.url) + '</span>', true);
-      html += '<div class="result-actions"><button type="button" class="btn btn-net" id="net-card">生成分享卡片</button></div>';
-      html += '<div class="tip">点击链接自动选中文本，长按可「复制」，再到网易云音乐 App 内打开</div>';
-    }
+    html += noticeBlockHtml(d);
+    html += sharerBlockHtml(d);
+    if (d.nameLine) html += fieldHtml(d.type === '单曲' ? '歌曲' : '名称', esc(d.nameLine), true);
+    if (d.targetUrl) html += fieldHtml('原链接', linkHtml(d.targetUrl, 'netease'), true);
+    html += metaRowsHtml(d);
+    html += cleanUrlBlockHtml(d);
+    html += '<div class="result-actions"><button type="button" class="btn btn-net" id="net-card">生成分享卡片</button></div>';
     box.innerHTML = html;
     box.hidden = false;
     box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    var cardBtn = $('#net-card');
-    if (cardBtn) cardBtn.addEventListener('click', function () { makeCard('netease', d); });
+    $('#net-card').addEventListener('click', function () { makeCard('netease', d); });
     if (!fromHistory) {
-      addHistory({ platform: 'netease', label: d.nameLine || d.raw || ('网易云音乐 ' + d.type), time: nowLabel(), d: d });
+      addHistory({ platform: 'netease', label: d.nameLine || d.userId || ('网易云 ' + (d.type || '')), time: nowLabel(), d: d });
     }
   }
 
-  /* ---------- 历史记录（localStorage） ---------- */
+  function renderDouyin(d, fromHistory) {
+    var box = $('#dy-result');
+    box.setAttribute('data-platform', 'douyin');
+    var html = '<div class="result-head">' + badgeHtml('douyin', '抖音 · ' + (d.linkTypeLabel || '分享链接'))
+      + '<span class="result-time">' + nowLabel() + '</span></div>';
+    html += noticeBlockHtml(d);
+    html += sharerBlockHtml(d);
+    if (d.uid) html += fieldHtml('用户 ID', esc(d.uid), true);
+    if (d.secUid) html += fieldHtml('主页 ID', esc(d.secUid), true);
+    if (d.targetUrl) html += fieldHtml('原链接', linkHtml(d.targetUrl, 'douyin'), true);
+    html += metaRowsHtml(d);
+    html += cleanUrlBlockHtml(d);
+    html += '<div class="result-actions"><button type="button" class="btn btn-dy" id="dy-card">生成分享卡片</button></div>';
+    box.innerHTML = html;
+    box.hidden = false;
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    $('#dy-card').addEventListener('click', function () { makeCard('douyin', d); });
+    if (!fromHistory) {
+      addHistory({ platform: 'douyin', label: d.userId || d.noteId || '抖音分享', time: nowLabel(), d: d });
+    }
+  }
+
+  /* ============================================================
+   * 历史记录（localStorage）
+   * ============================================================ */
 
   function loadHistory() {
     try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch (e) { return []; }
@@ -264,15 +908,22 @@
   function showHistoryItem(it) {
     switchTab(it.platform);
     if (it.platform === 'xhs') renderXhs(it.d, true);
-    else renderNetease(it.d, true);
+    else if (it.platform === 'netease') renderNetease(it.d, true);
+    else renderDouyin(it.d, true);
   }
 
-  /* ---------- Native 能力（JSBridge，容器内可用） ---------- */
+  /* ============================================================
+   * Native 能力（JSBridge，容器内可用）
+   * ============================================================ */
 
   function openXhsNote(d) {
     var mt = (window.xhs && window.xhs.miniTool) || null;
     if (!mt || !mt.openRedPage) {
       alert('当前环境不支持跳转，请复制笔记链接到小红书 App 打开');
+      return;
+    }
+    if (!d.noteId) {
+      alert('该链接没有笔记 ID，无法跳转');
       return;
     }
     mt.openRedPage({ type: 'note', params: { id: d.noteId } }).then(function () {}, function (err) {
@@ -296,7 +947,9 @@
     });
   }
 
-  /* ---------- 分享卡片（Canvas 2D 生成） ---------- */
+  /* ============================================================
+   * 分享卡片（Canvas 2D 生成）
+   * ============================================================ */
 
   function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
     var lines = [];
@@ -372,6 +1025,13 @@
       y += 20;
     }
 
+    if (info.sharerLine) {
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.font = 'bold 34px "PingFang SC", "Microsoft YaHei", sans-serif';
+      var sharerLines = wrapText(ctx, info.sharerLine, W / 2, Math.max(y + 40, 700), W - 140, 48, 2);
+      y = Math.max(y + 40, 700) + sharerLines * 48 + 20;
+    }
+
     if (info.id) {
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 34px "SF Mono", Menlo, Consolas, monospace';
@@ -392,32 +1052,37 @@
 
   function makeCard(platform, d) {
     var info;
+    var sharerLine = d.userId ? '分享者：' + d.userId : '';
+
     if (platform === 'xhs') {
       info = {
-        main: d.title || '小红书笔记',
+        main: d.title || (d.userId ? '小红书笔记' : '小红书网页分享'),
         sub: d.author ? '作者：' + d.author : '',
         idLabel: '笔记ID',
-        id: d.noteId,
-        link: d.longUrl || d.shortUrl || '',
-        typeLabel: d.type
+        id: d.noteId || '',
+        link: d.cleanUrl || d.targetUrl || '',
+        typeLabel: d.type || d.linkTypeLabel || '笔记',
+        sharerLine: sharerLine
       };
-    } else if (d.type === '小程序口令') {
+    } else if (platform === 'netease') {
       info = {
-        main: '网易云音乐分享',
-        sub: '小程序口令 · 请先在微信中打开',
-        idLabel: '',
-        id: '',
-        link: d.raw,
-        typeLabel: '小程序口令'
+        main: d.nameLine || '网易云音乐',
+        sub: d.type || '',
+        idLabel: d.type === '单曲' ? '歌曲' : '内容',
+        id: d.noteId || '',
+        link: d.cleanUrl || d.targetUrl || '',
+        typeLabel: d.type || '分享',
+        sharerLine: sharerLine
       };
     } else {
       info = {
-        main: d.nameLine || '网易云音乐',
-        sub: (d.type || '') + (d.id ? ' · ID ' + d.id : ''),
-        idLabel: 'ID',
-        id: d.id,
-        link: d.url || '',
-        typeLabel: d.type
+        main: d.userId ? '抖音视频分享' : '抖音视频',
+        sub: d.noteId ? 'aweme_id ' + d.noteId : '',
+        idLabel: 'aweme_id',
+        id: d.noteId || '',
+        link: d.cleanUrl || d.videoUrl || d.targetUrl || '',
+        typeLabel: d.linkTypeLabel || '分享',
+        sharerLine: sharerLine
       };
     }
     currentCardUrl = drawShareCard(platform, info);
@@ -427,7 +1092,9 @@
     $('#card-preview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  /* ---------- 交互绑定 ---------- */
+  /* ============================================================
+   * 交互绑定
+   * ============================================================ */
 
   function switchTab(name) {
     $('#tabs').setAttribute('data-active', name);
@@ -436,13 +1103,20 @@
     });
     $('#panel-xhs').hidden = name !== 'xhs';
     $('#panel-netease').hidden = name !== 'netease';
+    $('#panel-douyin').hidden = name !== 'douyin';
   }
 
   var SAMPLES = {
     'xhs-short': '48 一只小鹿🦌发布了一篇小红书笔记，快来看吧！ 😆 aB3cD5eF7gH9 😆 \nhttp://xhslink.com/a/AbCdEfGh，复制本条信息，打开【小红书】App查看精彩内容！',
+    'xhs-sharered': '标题：周末去哪儿｜西湖边的宝藏咖啡店\n作者：一只小鹿🦌\nhttps://www.xiaohongshu.com/explore/64a1b2c3d4e5f60001234567?shareRedId=ODpDMUU3RzxKO0o3Tz4wNjY0Ozo4OjxA&xsec_token=ABcdEF12_ghIJklmnOpQrstUVwxYz',
+    'xhs-appuid': '标题：周末去哪儿｜西湖边的宝藏咖啡店\n作者：一只小鹿🦌\nhttps://www.xiaohongshu.com/explore/64a1b2c3d4e5f60001234567?appuid=64a1b2c3d4e5f60001234567',
     'xhs-long': '标题：周末去哪儿｜西湖边的宝藏咖啡店\n作者：一只小鹿🦌\nhttps://www.xiaohongshu.com/explore/64a1b2c3d4e5f60001234567?xsec_token=ABcdEF12_ghIJklmnOpQrstUVwxYz&xsec_source=pc_share',
-    'net-song': '分享单曲\n周杰伦《晴天》 https://music.163.com/song?id=186016&userid=123456 (@网易云音乐)',
-    'net-playlist': '分享歌单\n我的私藏歌单 https://music.163.com/playlist?id=2345678&userid=123456 (@网易云音乐)'
+    'net-song-uct2': '分享单曲\n周杰伦《晴天》 https://music.163.com/song?id=186016&uct2=698yG4AQprBoS8bc9nILjA== (@网易云音乐)',
+    'net-playlist-uid': '分享歌单\n我的私藏歌单 https://music.163.com/playlist?id=2345678&userid=1234567890 (@网易云音乐)',
+    'net-song-uct': '分享单曲\n周杰伦《晴天》 https://music.163.com/song?id=186016&uct=tHJ4OspUvXb4M2lARzl7Sg== (@网易云音乐)',
+    'dy-short': '5.43 复制打开抖音，看看【一只小鹿的作品】# 旅行 vlog  https://v.douyin.com/iRabcDe/ 复制此链接，打开Dou音搜索，直接观看视频！',
+    'dy-video-ai': 'https://www.douyin.com/video/7381234567890123456?activity_info=%7B%22social_share_user_id%22%3A%2212345678901%22%2C%22social_share_time%22%3A%221700000000%22%2C%22social_share_id%22%3A%22xhs_test_001%22%7D&u_code=xyz123',
+    'dy-aweme': '7381234567890123456'
   };
 
   function init() {
@@ -453,7 +1127,7 @@
     $('#xhs-parse').addEventListener('click', function () {
       var text = $('#xhs-input').value.trim();
       if (!text) { alert('请先粘贴小红书分享内容'); return; }
-      var r = parseXhs(text);
+      var r = resolveXhs(text);
       if (!r.ok) {
         $('#xhs-result').innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
         $('#xhs-result').hidden = false;
@@ -469,7 +1143,7 @@
     $('#net-parse').addEventListener('click', function () {
       var text = $('#net-input').value.trim();
       if (!text) { alert('请先粘贴网易云音乐分享内容'); return; }
-      var r = parseNetease(text);
+      var r = resolveNetease(text);
       if (!r.ok) {
         $('#net-result').innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
         $('#net-result').hidden = false;
@@ -482,13 +1156,30 @@
       $('#net-result').hidden = true;
     });
 
+    $('#dy-parse').addEventListener('click', function () {
+      var text = $('#dy-input').value.trim();
+      if (!text) { alert('请先粘贴抖音分享内容'); return; }
+      var r = resolveDouyin(text);
+      if (!r.ok) {
+        $('#dy-result').innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
+        $('#dy-result').hidden = false;
+        return;
+      }
+      renderDouyin(r.data);
+    });
+    $('#dy-clear').addEventListener('click', function () {
+      $('#dy-input').value = '';
+      $('#dy-result').hidden = true;
+    });
+
     $$('.chip').forEach(function (c) {
       c.addEventListener('click', function () {
         var key = c.getAttribute('data-sample');
         var s = SAMPLES[key];
         if (!s) return;
         if (key.indexOf('xhs') === 0) { $('#xhs-input').value = s; switchTab('xhs'); }
-        else { $('#net-input').value = s; switchTab('netease'); }
+        else if (key.indexOf('net') === 0) { $('#net-input').value = s; switchTab('netease'); }
+        else { $('#dy-input').value = s; switchTab('douyin'); }
       });
     });
 
