@@ -801,12 +801,122 @@
     'net-playlist-uid': '分享歌单\n我的私藏歌单 https://music.163.com/playlist?id=2345678&userid=1234567890 (@网易云音乐)'
   };
 
-  // 吞链兽吞链动画：点「吞掉」时小怪兽吃链条
-  function playEatAnimation() {
+  /* ============================================================
+   * 吞链兽动画（GSAP 驱动；无 gsap 时降级 CSS 动画）
+   * 遵循 gsap-core / gsap-timeline / gsap-performance skill：
+   * 只动画 transform / opacity，循环用 yoyo 时间线，动作用 timeline 编排
+   * ============================================================ */
+
+  var idleTweens = [];
+
+  function beastPart(beast, cls) { return beast.querySelector(cls); }
+
+  function initBeastAnimation() {
     var beast = $('#beast');
     if (!beast) return;
-    beast.classList.add('eating');
-    setTimeout(function () { beast.classList.remove('eating'); }, 780);
+
+    var gsap = window.gsap;
+    if (!gsap) {
+      // 降级：CSS 关键帧动画
+      beast.classList.add('css-anim');
+      return;
+    }
+    // 尊重系统减少动态效果设置
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    var body = beastPart(beast, '.beast-body');
+    var shadow = beastPart(beast, '.beast-shadow');
+    var mouth = beastPart(beast, '.beast-mouth');
+    var armL = beastPart(beast, '.arm-l');
+    var armR = beastPart(beast, '.arm-r');
+    var eyes = beastPart(beast, '.beast-eye');
+
+    // 呼吸弹跳（循环，transform only）
+    idleTweens.push(
+      gsap.to(body, {
+        y: -7, scaleY: 1.02, duration: 1.3, ease: 'sine.inOut',
+        yoyo: true, repeat: -1, transformOrigin: '50% 100%',
+      })
+    );
+    idleTweens.push(
+      gsap.to(shadow, {
+        scaleX: 0.8, opacity: 0.65, duration: 1.3, ease: 'sine.inOut',
+        yoyo: true, repeat: -1, transformOrigin: '50% 50%',
+      })
+    );
+    // 嘴巴开合（循环）
+    idleTweens.push(
+      gsap.to(mouth, {
+        scaleX: 0.84, scaleY: 0.84, duration: 1.3, ease: 'sine.inOut',
+        yoyo: true, repeat: -1, transformOrigin: '50% 0%',
+      })
+    );
+    // 手臂摆动（循环）
+    idleTweens.push(
+      gsap.to(armL, { rotation: 24, y: -3, duration: 1.3, ease: 'sine.inOut', yoyo: true, repeat: -1 })
+    );
+    idleTweens.push(
+      gsap.to(armR, { rotation: -24, y: -3, duration: 1.3, ease: 'sine.inOut', yoyo: true, repeat: -1 })
+    );
+    // 眨眼（间隔循环）
+    idleTweens.push(
+      gsap.timeline({ repeat: -1, repeatDelay: 3.4 })
+        .to(eyes, { scaleY: 0.12, duration: 0.09, ease: 'power2.in', transformOrigin: '50% 50%' })
+        .to(eyes, { scaleY: 1, duration: 0.12, ease: 'power2.out' })
+    );
+  }
+
+  // 吞链动画：点「吞掉」时小怪兽吃链条，完成后回调
+  function playEatAnimation(onDone) {
+    var beast = $('#beast');
+    var gsap = window.gsap;
+
+    if (!beast || !gsap || !idleTweens.length) {
+      // CSS 降级路径
+      if (beast) {
+        beast.classList.add('eating');
+        setTimeout(function () {
+          beast.classList.remove('eating');
+          if (onDone) onDone();
+        }, 780);
+        return;
+      }
+      if (onDone) onDone();
+      return;
+    }
+
+    var body = beastPart(beast, '.beast-body');
+    var mouth = beastPart(beast, '.beast-mouth');
+    var chain = beastPart(beast, '.beast-chain');
+    var eyes = beastPart(beast, '.beast-eye');
+
+    // 暂停常驻循环，避免属性打架；结束后恢复
+    for (var i = 0; i < idleTweens.length; i++) idleTweens[i].pause();
+
+    var tl = gsap.timeline({
+      onComplete: function () {
+        for (var j = 0; j < idleTweens.length; j++) idleTweens[j].resume();
+        if (onDone) onDone();
+      },
+    });
+
+    tl
+      // 蹲下蓄力 + 张大嘴
+      .to(body, { scaleY: 0.8, scaleX: 1.12, duration: 0.16, ease: 'power2.in', transformOrigin: '50% 100%' }, 0)
+      .to(mouth, { scale: 1.55, duration: 0.16, ease: 'power2.in', transformOrigin: '50% 0%' }, 0)
+      // 链条掉入嘴里
+      .set(chain, { opacity: 1, y: -12, scale: 1 }, 0.1)
+      .to(chain, { y: 66, duration: 0.28, ease: 'power2.in' }, 0.1)
+      .to(chain, { scale: 0.3, opacity: 0, duration: 0.12, ease: 'power1.in' }, 0.38)
+      // 闭眼满足 + 弹回
+      .to(eyes, { scaleY: 0.15, duration: 0.08, transformOrigin: '50% 50%' }, 0.42)
+      .to(mouth, { scale: 0.6, duration: 0.14, ease: 'power2.out' }, 0.42)
+      .to(body, { scaleY: 1.07, scaleX: 0.94, duration: 0.16, ease: 'back.out(3)' }, 0.42)
+      .to(eyes, { scaleY: 1, duration: 0.1 }, 0.58)
+      .to(mouth, { scale: 1, duration: 0.16, ease: 'back.out(2)' }, 0.58)
+      .to(body, { scaleY: 1, scaleX: 1, duration: 0.18, ease: 'back.out(2)' }, 0.58);
   }
 
   function doParse() {
@@ -817,8 +927,7 @@
       box.hidden = false;
       return;
     }
-    playEatAnimation();
-    setTimeout(function () {
+    playEatAnimation(function () {
       var r = resolveInput(text);
       if (!r.ok) {
         box.innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
@@ -826,7 +935,7 @@
         return;
       }
       renderResult(r.data);
-    }, 560);
+    });
   }
 
   function doClear() {
@@ -883,6 +992,7 @@
     try {
       var ok = $('#js-ok');
       if (ok) ok.hidden = false;
+      initBeastAnimation();
       renderHistory();
     } catch (e) {}
   }
