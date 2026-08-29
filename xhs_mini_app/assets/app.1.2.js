@@ -48,7 +48,54 @@
   function toUnixSeconds(value) {
     if (value === null || value === undefined || value === '') return undefined;
     var parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
+    return isFinite(parsed) ? parsed : undefined;
+  }
+
+  // 兼容工具：不依赖 URL / URLSearchParams / closest 等较新 API
+
+  // 解析绝对 http(s) URL 的组成部分（字符串级，老 WebView 也支持）
+  function parseUrlParts(u) {
+    var parts = { hostname: '', pathname: '', search: '', hash: '' };
+    var rest = String(u || '');
+    var scheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.exec(rest);
+    if (scheme) rest = rest.slice(scheme[0].length);
+
+    var h = rest.indexOf('#');
+    if (h !== -1) { parts.hash = rest.slice(h); rest = rest.slice(0, h); }
+    var q = rest.indexOf('?');
+    if (q !== -1) { parts.search = rest.slice(q); rest = rest.slice(0, q); }
+
+    var slash = rest.indexOf('/');
+    if (slash === -1) { parts.hostname = rest; rest = ''; }
+    else { parts.hostname = rest.slice(0, slash); rest = rest.slice(slash); }
+    parts.pathname = rest;
+
+    var at = parts.hostname.lastIndexOf('@');
+    if (at !== -1) parts.hostname = parts.hostname.slice(at + 1);
+    var colon = parts.hostname.indexOf(':');
+    if (colon !== -1) parts.hostname = parts.hostname.slice(0, colon);
+    parts.hostname = parts.hostname.toLowerCase();
+    return parts;
+  }
+
+  function extractHost(u) {
+    return parseUrlParts(u).hostname;
+  }
+
+  function closestTag(el, tagName) {
+    while (el && el.nodeType === 1) {
+      if (el.tagName === tagName) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  function closestDataCopy(el) {
+    while (el && el.nodeType === 1) {
+      if (el.getAttribute && el.getAttribute('data-copy') !== null) return el;
+      el = el.parentNode;
+    }
+    return null;
   }
 
   function selectText(el) {
@@ -95,18 +142,16 @@
 
   function getMergedSearchParams(input) {
     var params = {};
-    try {
-      var url = new URL(input);
-      var search = parseQuery(url.search);
-      for (var k in search) params[k] = search[k];
-      if (url.hash.indexOf('?') !== -1) {
-        var hashQuery = url.hash.split('?', 2)[1] || '';
-        var hashParams = parseQuery('?' + hashQuery);
-        for (var hk in hashParams) {
-          if (!(hk in params)) params[hk] = hashParams[hk];
-        }
+    var parts = parseUrlParts(input);
+    var search = parseQuery(parts.search);
+    for (var k in search) params[k] = search[k];
+    if (parts.hash.indexOf('?') !== -1) {
+      var hashQuery = parts.hash.split('?', 2)[1] || '';
+      var hashParams = parseQuery('?' + hashQuery);
+      for (var hk in hashParams) {
+        if (!(hk in params)) params[hk] = hashParams[hk];
       }
-    } catch (e) {}
+    }
     return params;
   }
 
@@ -193,11 +238,8 @@
 
   function findXhsUrl(input) {
     var trimmed = input.trim();
-    try {
-      var url = new URL(trimmed);
-      if (isXhsHost(url.hostname) || isXhsShortHost(url.hostname)) return url.toString();
-      return null;
-    } catch (e) {}
+    var host = extractHost(trimmed);
+    if (host && (isXhsHost(host) || isXhsShortHost(host))) return trimmed;
 
     var clean = function (raw) { return raw.replace(/[，。、；）)」』\]]+$/, ''); };
     var fullLinks = (trimmed.match(XHS_FULL_URL_PATTERN) || []).map(clean);
@@ -212,8 +254,8 @@
   }
 
   function parseXhsUrl(targetUrl) {
-    var url = new URL(targetUrl);
-    var segments = url.pathname.split('/').filter(Boolean);
+    var parts = parseUrlParts(targetUrl);
+    var segments = parts.pathname.split('/').filter(Boolean);
     var noteId = null;
     var profileUserId = null;
 
@@ -224,14 +266,14 @@
     } else if (segments[0] === 'explore' || segments[0] === 'share') {
       noteId = segments[1] || null;
     }
-    return { url: url, noteId: noteId, profileUserId: profileUserId };
+    return { parts: parts, noteId: noteId, profileUserId: profileUserId };
   }
 
-  function classifyXhsLink(url, noteId, profileUserId) {
+  function classifyXhsLink(parts, noteId, profileUserId) {
     if (profileUserId) return 'user_profile';
-    var params = url.searchParams;
-    if (params.get('shareRedId')) return 'app_share_encrypted';
-    if (params.get('appuid')) return 'app_share_plain';
+    var params = parseQuery(parts.search);
+    if (params.shareRedId) return 'app_share_encrypted';
+    if (params.appuid) return 'app_share_plain';
     if (noteId) return 'web_share';
     return 'other';
   }
@@ -306,8 +348,7 @@
     }
 
     var targetUrl = found;
-    var hostname = '';
-    try { hostname = new URL(targetUrl).hostname; } catch (e) {}
+    var hostname = extractHost(targetUrl);
 
     var data = {
       platform: 'xhs',
@@ -324,22 +365,22 @@
     }
 
     var parsed = parseXhsUrl(targetUrl);
-    var url = parsed.url;
+    var parts = parsed.parts;
     var noteId = parsed.noteId;
     var profileUserId = parsed.profileUserId;
-    var params = url.searchParams;
-    var linkType = classifyXhsLink(url, noteId, profileUserId);
+    var params = parseQuery(parts.search);
+    var linkType = classifyXhsLink(parts, noteId, profileUserId);
     var meta = extractXhsTextMeta(text);
 
     data.noteId = noteId || undefined;
     data.linkType = linkType;
     data.linkTypeLabel = XHS_LINK_TYPE_LABEL[linkType] || linkType;
     data.cleanUrl = stripXhsSharerParams(targetUrl);
-    data.shareTime = toUnixSeconds(params.get('apptime'));
-    data.shareChannel = params.get('xhsshare') || undefined;
-    data.shareEventId = params.get('share_id') || undefined;
-    data.xsecToken = params.get('xsec_token') || undefined;
-    data.appVersion = params.get('app_version') || undefined;
+    data.shareTime = toUnixSeconds(params.apptime);
+    data.shareChannel = params.xhsshare || undefined;
+    data.shareEventId = params.share_id || undefined;
+    data.xsecToken = params.xsec_token || undefined;
+    data.appVersion = params.app_version || undefined;
     data.author = meta.author || undefined;
     data.title = meta.title || undefined;
     data.type = meta.type;
@@ -349,12 +390,12 @@
       data.source = 'user_profile';
       data.algorithm = '链接里直接带着';
     } else if (linkType === 'app_share_encrypted') {
-      data.userId = decodeShareRedId(params.get('shareRedId') || '') || undefined;
+      data.userId = decodeShareRedId(params.shareRedId || '') || undefined;
       data.source = 'shareRedId';
       data.algorithm = data.userId ? '从链接参数 shareRedId 解码出来的' : '链接里的分享者信息没法解析';
       if (!data.userId) data.noSharerReason = '链接里的 shareRedId 无法解析（可能不是这套算法编码的）';
     } else if (linkType === 'app_share_plain') {
-      data.userId = params.get('appuid') || undefined;
+      data.userId = params.appuid || undefined;
       data.source = 'appuid';
       data.algorithm = '链接里直接带着';
     } else if (linkType === 'web_share') {
@@ -383,17 +424,14 @@
 
   function findNeteaseUrl(input) {
     var trimmed = input.trim();
-    try {
-      var url = new URL(trimmed);
-      if (
-        url.hostname === 'music.163.com' ||
-        url.hostname === 'y.music.163.com' ||
-        url.hostname === NETEASE_SHORT_HOST
-      ) {
-        return url.toString();
-      }
-      return null;
-    } catch (e) {}
+    var host = extractHost(trimmed);
+    if (
+      host === 'music.163.com' ||
+      host === 'y.music.163.com' ||
+      host === NETEASE_SHORT_HOST
+    ) {
+      return trimmed;
+    }
 
     var match = trimmed.match(NETEASE_URL_PATTERN);
     if (!match) return null;
@@ -442,27 +480,49 @@
   }
 
   // 脱敏：删掉 search 和 hash 里的分享者参数（userid/uct2/uct），内容 ID 保留
+  // （字符串级处理，不依赖 URL / URLSearchParams，保持原始编码）
+  var NETEASE_SHARER_KEYS = ['userid', 'uct2', 'uct'];
+
+  function stripKeysFromQuery(query, removed) {
+    var normalized = query.charAt(0) === '?' ? query.slice(1) : query;
+    var kept = [];
+    var items = normalized.split('&');
+    for (var i = 0; i < items.length; i++) {
+      if (!items[i]) continue;
+      var key = items[i].split('=', 1)[0];
+      if (NETEASE_SHARER_KEYS.indexOf(key) !== -1) {
+        if (removed.indexOf(key) === -1) removed.push(key);
+        continue;
+      }
+      kept.push(items[i]);
+    }
+    return kept.length ? '?' + kept.join('&') : '';
+  }
+
   function stripNeteaseSharerParams(input) {
     var removed = [];
-    var url;
-    try { url = new URL(input); } catch (e) { return { cleanUrl: input, removed: removed }; }
+    var parts = parseUrlParts(input);
+    var out = input;
 
-    var search = new URLSearchParams(url.search);
-    ['userid', 'uct2', 'uct'].forEach(function (key) {
-      if (search.has(key)) { search.delete(key); removed.push(key); }
-    });
-    url.search = search.toString();
-
-    if (url.hash.indexOf('?') !== -1) {
-      var hashParts = url.hash.split('?', 2);
-      var hashParams = new URLSearchParams(hashParts[1] || '');
-      var hashChanged = false;
-      ['userid', 'uct2', 'uct'].forEach(function (key) {
-        if (hashParams.has(key)) { hashParams.delete(key); removed.push(key); hashChanged = true; }
-      });
-      if (hashChanged) url.hash = hashParts[0] + '?' + hashParams.toString();
+    if (parts.search) {
+      var idx = out.indexOf(parts.search);
+      if (idx !== -1) {
+        var newSearch = stripKeysFromQuery(parts.search, removed);
+        out = out.slice(0, idx) + newSearch + out.slice(idx + parts.search.length);
+      }
     }
-    return { cleanUrl: url.toString(), removed: removed };
+
+    if (parts.hash && parts.hash.indexOf('?') !== -1) {
+      var idx2 = out.indexOf(parts.hash);
+      if (idx2 !== -1) {
+        var hashParts = parts.hash.split('?', 2);
+        var newHashQuery = stripKeysFromQuery('?' + hashParts[1], removed);
+        var newHash = hashParts[0] + newHashQuery;
+        out = out.slice(0, idx2) + newHash + out.slice(idx2 + parts.hash.length);
+      }
+    }
+
+    return { cleanUrl: out, removed: removed };
   }
 
   // 内容类型 + 名称（从文案里提取）
@@ -516,8 +576,7 @@
     var targetUrl = found;
     var data = { platform: 'netease', targetUrl: targetUrl };
 
-    var hostname = '';
-    try { hostname = new URL(targetUrl).hostname; } catch (e) {}
+    var hostname = extractHost(targetUrl);
 
     // 163cn.tv 短链：需联网跳转，容器内不可用
     if (hostname === NETEASE_SHORT_HOST) {
@@ -587,7 +646,7 @@
    * ============================================================ */
 
   function isDirectUrlInput(input) {
-    try { new URL(input.trim()); return true; } catch (e) { return false; }
+    return /^https?:\/\/\S+$/i.test(input.trim());
   }
 
   function resolveInput(text) {
@@ -1023,8 +1082,7 @@
 
   // 统一按钮路由（含动态渲染出的按钮）
   function onDocClick(e) {
-    var t = e.target;
-    var btn = t && t.closest ? t.closest('button') : null;
+    var btn = closestTag(e.target, 'BUTTON');
     if (!btn) return;
 
     var sampleKey = btn.getAttribute && btn.getAttribute('data-sample');
@@ -1049,7 +1107,7 @@
 
   // data-copy 链接点击 → 自动选中文本
   function onDocCopyClick(e) {
-    var el = e.target && e.target.closest ? e.target.closest('[data-copy]') : null;
+    var el = closestDataCopy(e.target);
     if (el) selectText(el);
   }
 
