@@ -44,8 +44,17 @@ body::after { width: 170px; height: 170px; bottom: 50px; left: -60px; }
 /* ---------- 头部（CSS 绘制的小怪兽） ---------- */
 
 .app-header { text-align: center; padding: 0 0 2px; }
-.app-title { font-size: 28px; font-weight: 900; margin-top: 6px; letter-spacing: 2px; }
-.app-sub { font-size: 13px; color: var(--sub); margin-top: 6px; }
+.app-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin-top: 4px;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #4E52C8 0%, #7B7FEA 55%, #A8ACF2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.app-sub { font-size: 13px; color: #9A9EC8; margin-top: 6px; letter-spacing: 0.5px; }
 
 .beast { position: relative; width: 150px; height: 156px; margin: 0 auto; }
 
@@ -150,11 +159,11 @@ body::after { width: 170px; height: 170px; bottom: 50px; left: -60px; }
 
 @keyframes beast-bob {
   0%, 100% { transform: translateX(-50%) translateY(0) scaleY(1); }
-  50% { transform: translateX(-50%) translateY(-7px) scaleY(1.02); }
+  50% { transform: translateX(-50%) translateY(-4px) scaleY(1.01); }
 }
 @keyframes beast-shadow {
   0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
-  50% { transform: translateX(-50%) scale(0.8); opacity: 0.65; }
+  50% { transform: translateX(-50%) scale(0.88); opacity: 0.75; }
 }
 @keyframes beast-blink {
   0%, 90%, 100% { transform: scaleY(1); }
@@ -162,26 +171,26 @@ body::after { width: 170px; height: 170px; bottom: 50px; left: -60px; }
 }
 @keyframes beast-mouth {
   0%, 100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(0.82); }
+  50% { transform: translateX(-50%) scale(0.92); }
 }
 @keyframes arm-l {
-  0%, 100% { transform: rotate(12deg); }
-  50% { transform: rotate(24deg) translateY(-3px); }
+  0%, 100% { transform: rotate(8deg); }
+  50% { transform: rotate(16deg) translateY(-2px); }
 }
 @keyframes arm-r {
-  0%, 100% { transform: rotate(-12deg); }
-  50% { transform: rotate(-24deg) translateY(-3px); }
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(-16deg) translateY(-2px); }
 }
 
 /* 吞链动画（点「吞掉」时触发） */
 
 /* CSS 降级动画：仅在无 GSAP 时启用 */
-.beast.css-anim .beast-body { animation: beast-bob 2.6s ease-in-out infinite; }
+.beast.css-anim .beast-body { animation: beast-bob 3.8s ease-in-out infinite; }
 .beast.css-anim .beast-eye { animation: beast-blink 4.2s ease-in-out infinite; }
-.beast.css-anim .beast-mouth { animation: beast-mouth 2.6s ease-in-out infinite; }
-.beast.css-anim .arm-l { animation: arm-l 2.6s ease-in-out infinite; }
-.beast.css-anim .arm-r { animation: arm-r 2.6s ease-in-out infinite; }
-.beast.css-anim .beast-shadow { animation: beast-shadow 2.6s ease-in-out infinite; }
+.beast.css-anim .beast-mouth { animation: beast-mouth 3.8s ease-in-out infinite; }
+.beast.css-anim .arm-l { animation: arm-l 3.8s ease-in-out infinite; }
+.beast.css-anim .arm-r { animation: arm-r 3.8s ease-in-out infinite; }
+.beast.css-anim .beast-shadow { animation: beast-shadow 3.8s ease-in-out infinite; }
 .beast.css-anim.eating .beast-body { animation: beast-eat 0.72s ease-in-out; }
 .beast.css-anim.eating .beast-mouth { animation: beast-eat-mouth 0.72s ease-in-out; }
 .beast.css-anim.eating .beast-chain { animation: chain-drop 0.72s ease-in forwards; }
@@ -189,14 +198,14 @@ body::after { width: 170px; height: 170px; bottom: 50px; left: -60px; }
 
 @keyframes beast-eat {
   0% { transform: translateX(-50%) scaleY(1) scaleX(1); }
-  35% { transform: translateX(-50%) scaleY(0.8) scaleX(1.12); }
-  70% { transform: translateX(-50%) scaleY(1.07) scaleX(0.94); }
+  35% { transform: translateX(-50%) scaleY(0.86) scaleX(1.08); }
+  70% { transform: translateX(-50%) scaleY(1.04) scaleX(0.96); }
   100% { transform: translateX(-50%) scaleY(1) scaleX(1); }
 }
 @keyframes beast-eat-mouth {
   0% { transform: translateX(-50%) scale(1); }
-  30% { transform: translateX(-50%) scale(1.55); }
-  65% { transform: translateX(-50%) scale(0.6); }
+  30% { transform: translateX(-50%) scale(1.4); }
+  65% { transform: translateX(-50%) scale(0.75); }
   100% { transform: translateX(-50%) scale(1); }
 }
 @keyframes chain-drop {
