@@ -176,7 +176,58 @@ code {
   word-break: break-all;
 }
 .sharer-url { margin-top: 6px; font-size: 13px; line-height: 1.6; word-break: break-all; }
+.sharer-home-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.sharer-home-row .sharer-url { flex: 1; margin-top: 0; font-size: 12px; color: var(--sub); min-width: 0; }
+.btn-sm {
+  flex: none;
+  border: 1.5px solid var(--text);
+  background: #FFFFFF;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--text);
+}
+.btn-sm:active { opacity: 0.7; }
 .sharer-algo { margin-top: 4px; font-size: 12px; color: var(--sub); }
+
+/* 脱敏后的分享内容 + 大按钮 */
+.clean-box {
+  margin-top: 12px;
+  border: 2px solid var(--text);
+  border-radius: 14px;
+  padding: 12px;
+  background: #FFFEF8;
+}
+.result[data-platform="douyin"] .clean-box { background: #FBFBFC; }
+.clean-label { font-size: 12px; color: var(--sub); letter-spacing: 1px; }
+.clean-content {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 180px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+.clean-content.flash { background: rgba(255, 200, 60, 0.35); border-radius: 6px; }
+.btn-big {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 14px;
+  padding: 16px 0;
+  font-size: 17px;
+  font-weight: 800;
+  font-family: inherit;
+  color: #FFFFFF;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18);
+}
+.btn-big:active { transform: translateY(1px); box-shadow: none; }
 
 /* 提示块 */
 .notice {

@@ -65,6 +65,21 @@
     sel.addRange(range);
   }
 
+  // 生成「脱敏后的分享内容」：把原文里的链接替换成脱敏链接；原文没有链接时直接输出脱敏链接
+  function buildCleanShareText(originalText, data) {
+    var text = originalText || '';
+    if (data.cleanUrl) {
+      if (data.targetUrl && text.indexOf(data.targetUrl) !== -1) {
+        text = text.split(data.targetUrl).join(data.cleanUrl);
+      } else if (data.videoUrl && text.indexOf(data.videoUrl) !== -1) {
+        text = text.split(data.videoUrl).join(data.cleanUrl);
+      } else {
+        text = data.cleanUrl;
+      }
+    }
+    return text;
+  }
+
   function parseQuery(query) {
     var params = {};
     var normalized = query.charAt(0) === '?' ? query.slice(1) : query;
@@ -301,6 +316,7 @@
     if (isXhsShortHost(hostname)) {
       data.needsNetwork = true;
       data.needsNetworkReason = 'xhslink 口令短链需要联网跳转后才能拿到分享者参数，小工具内不联网。\n可换用 App 内「复制链接」得到的完整链接，或到网站版解析。';
+      data.cleanText = text.trim();
       return { ok: true, data: data };
     }
 
@@ -347,6 +363,7 @@
     }
 
     if (data.userId) data.profileUrl = XHS_HOME_PREFIX + data.userId;
+    data.cleanText = buildCleanShareText(text, data);
     return { ok: true, data: data };
   }
 
@@ -503,6 +520,7 @@
     if (hostname === NETEASE_SHORT_HOST) {
       data.needsNetwork = true;
       data.needsNetworkReason = '163cn.tv 口令短链需要联网跳转后才能拿到分享者参数，小工具内不联网。\n可换用 App 内「复制链接」得到的完整链接，或到网站版解析。';
+      data.cleanText = text.trim();
       return { ok: true, data: data };
     }
 
@@ -557,6 +575,7 @@
     data.removedParams = stripped.removed;
     if (!data.removedParams.length) data.removedParams = undefined;
 
+    data.cleanText = buildCleanShareText(text, data);
     return { ok: true, data: data };
   }
 
@@ -669,6 +688,7 @@
     if (found.kind === 'short_link') {
       data.needsNetwork = true;
       data.needsNetworkReason = 'v.douyin.com 短链需要联网解析第一跳跳转（activity_info / u_code 都在这一跳），小工具内不联网。\n可换用视频页完整链接，或到网站版解析。';
+      data.cleanText = text.trim();
       return { ok: true, data: data };
     }
 
@@ -680,6 +700,7 @@
       data.needsNetworkReason = found.kind === 'user_url'
         ? '用户主页链接本身不携带分享者信息；确认用户信息需在线查询接口，小工具内不可用。'
         : '裸用户 ID 需要在线查询接口反查用户信息，小工具内不联网。\n可粘贴包含 activity_info 的完整视频分享链接，或到网站版解析。';
+      data.cleanText = text.trim();
       return { ok: true, data: data };
     }
 
@@ -713,6 +734,7 @@
       data.algorithm = '链接里没有分享者信息';
     }
 
+    data.cleanText = buildCleanShareText(text, data);
     return { ok: true, data: data };
   }
 
@@ -739,30 +761,64 @@
     return '<span class="link" data-copy="' + esc(url) + '">' + esc(url) + '</span>';
   }
 
-  function sharerBlockHtml(data) {
+  function sharerBlockHtml(data, platformId) {
     if (!data.userId) return '';
     var html = '<div class="sharer-box">';
     html += '<div class="sharer-label">分享者 ID</div>';
     html += '<div class="sharer-id selectable">' + esc(data.userId) + '</div>';
     if (data.profileUrl) {
-      html += '<div class="sharer-url">主页：' + linkHtml(data.profileUrl, data.platform) + '</div>';
+      html += '<div class="sharer-home-row">';
+      html += '<span class="sharer-url selectable" id="' + platformId + '-profile-url">' + esc(data.profileUrl) + '</span>';
+      html += '<button type="button" class="btn-sm" id="' + platformId + '-profile-btn">分享者主页</button>';
+      html += '</div>';
     } else if (data.profileHint) {
-      html += '<div class="sharer-url">主页：' + esc(data.profileHint) + '</div>';
+      html += '<div class="sharer-url">' + esc(data.profileHint) + '</div>';
     }
     if (data.algorithm) html += '<div class="sharer-algo">' + esc(data.algorithm) + '</div>';
     html += '</div>';
     return html;
   }
 
-  function cleanUrlBlockHtml(data) {
-    if (!data.cleanUrl) return '';
-    var label = '脱敏链接';
-    var tip = '已抹除分享者参数，可直接转发';
+  // 核心输出 2：脱敏后的分享内容 + 大按钮（容器无剪贴板 API，点击后选中文本引导长按复制）
+  function cleanCopyBlockHtml(data, platformId) {
+    if (!data.cleanUrl && !data.targetUrl) return '';
+    var label = '脱敏后的分享内容';
     if (data.removedParams && data.removedParams.length) {
       label += '（已抹 ' + esc(data.removedParams.join('、')) + '）';
+    } else if (!data.needsNetwork) {
+      label += '（未发现分享者参数）';
     }
-    return fieldHtml(label, linkHtml(data.cleanUrl, data.platform), true)
-      + '<div class="tip">' + tip + '：点击链接自动选中，长按可「复制」</div>';
+    var t = THEME[data.platform] || THEME.xhs;
+    var html = '<div class="clean-box">';
+    html += '<div class="clean-label">' + label + '</div>';
+    html += '<div class="clean-content selectable" id="' + platformId + '-clean-text">' + esc(data.cleanText || '') + '</div>';
+    html += '<button type="button" class="btn-big" id="' + platformId + '-clean-copy" style="background:' + t.color + '">复制脱敏后的分享内容</button>';
+    html += '<div class="tip" id="' + platformId + '-clean-tip">点击按钮自动选中下方内容，长按选择「复制」即可转发</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function wireCleanCopy(platformId) {
+    var btn = $('#' + platformId + '-clean-copy');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var el = $('#' + platformId + '-clean-text');
+      if (!el) return;
+      selectText(el);
+      el.classList.add('flash');
+      var tip = $('#' + platformId + '-clean-tip');
+      if (tip) tip.textContent = '✅ 已选中上方内容，长按选择「复制」即可转发';
+      setTimeout(function () { el.classList.remove('flash'); }, 800);
+    });
+    var profileBtn = $('#' + platformId + '-profile-btn');
+    if (profileBtn) {
+      profileBtn.addEventListener('click', function () {
+        var el = $('#' + platformId + '-profile-url');
+        if (!el) return;
+        selectText(el);
+        el.classList.add('flash');
+      });
+    }
   }
 
   function metaRowsHtml(data) {
@@ -796,13 +852,12 @@
     var html = '<div class="result-head">' + badgeHtml('xhs', headLabel)
       + '<span class="result-time">' + nowLabel() + '</span></div>';
     html += noticeBlockHtml(d);
-    html += sharerBlockHtml(d);
+    html += sharerBlockHtml(d, 'xhs');
+    html += cleanCopyBlockHtml(d, 'xhs');
     if (d.author) html += fieldHtml('作者', esc(d.author), true);
     if (d.title) html += fieldHtml('标题', esc(d.title), true);
-    if (d.shortUrl) html += fieldHtml('口令短链', linkHtml(d.shortUrl, 'xhs'), true);
     if (d.targetUrl) html += fieldHtml('原链接', linkHtml(d.targetUrl, 'xhs'), true);
     html += metaRowsHtml(d);
-    html += cleanUrlBlockHtml(d);
     html += '<div class="result-actions">'
       + '<button type="button" class="btn btn-xhs" id="xhs-open">在小红书打开</button>'
       + '<button type="button" class="btn btn-ghost" id="xhs-card">生成分享卡片</button>'
@@ -814,6 +869,7 @@
     var openBtn = $('#xhs-open');
     if (openBtn) openBtn.addEventListener('click', function () { openXhsNote(d); });
     $('#xhs-card').addEventListener('click', function () { makeCard('xhs', d); });
+    wireCleanCopy('xhs');
     if (!fromHistory) {
       addHistory({ platform: 'xhs', label: (d.title || d.userId || '小红书笔记') + (d.author ? ' · ' + d.author : ''), time: nowLabel(), d: d });
     }
@@ -826,16 +882,17 @@
     var html = '<div class="result-head">' + badgeHtml('netease', headLabel)
       + '<span class="result-time">' + nowLabel() + '</span></div>';
     html += noticeBlockHtml(d);
-    html += sharerBlockHtml(d);
+    html += sharerBlockHtml(d, 'net');
+    html += cleanCopyBlockHtml(d, 'net');
     if (d.nameLine) html += fieldHtml(d.type === '单曲' ? '歌曲' : '名称', esc(d.nameLine), true);
     if (d.targetUrl) html += fieldHtml('原链接', linkHtml(d.targetUrl, 'netease'), true);
     html += metaRowsHtml(d);
-    html += cleanUrlBlockHtml(d);
     html += '<div class="result-actions"><button type="button" class="btn btn-net" id="net-card">生成分享卡片</button></div>';
     box.innerHTML = html;
     box.hidden = false;
     box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     $('#net-card').addEventListener('click', function () { makeCard('netease', d); });
+    wireCleanCopy('net');
     if (!fromHistory) {
       addHistory({ platform: 'netease', label: d.nameLine || d.userId || ('网易云 ' + (d.type || '')), time: nowLabel(), d: d });
     }
@@ -847,17 +904,18 @@
     var html = '<div class="result-head">' + badgeHtml('douyin', '抖音 · ' + (d.linkTypeLabel || '分享链接'))
       + '<span class="result-time">' + nowLabel() + '</span></div>';
     html += noticeBlockHtml(d);
-    html += sharerBlockHtml(d);
+    html += sharerBlockHtml(d, 'dy');
+    html += cleanCopyBlockHtml(d, 'dy');
     if (d.uid) html += fieldHtml('用户 ID', esc(d.uid), true);
     if (d.secUid) html += fieldHtml('主页 ID', esc(d.secUid), true);
     if (d.targetUrl) html += fieldHtml('原链接', linkHtml(d.targetUrl, 'douyin'), true);
     html += metaRowsHtml(d);
-    html += cleanUrlBlockHtml(d);
     html += '<div class="result-actions"><button type="button" class="btn btn-dy" id="dy-card">生成分享卡片</button></div>';
     box.innerHTML = html;
     box.hidden = false;
     box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     $('#dy-card').addEventListener('click', function () { makeCard('douyin', d); });
+    wireCleanCopy('dy');
     if (!fromHistory) {
       addHistory({ platform: 'douyin', label: d.userId || d.noteId || '抖音分享', time: nowLabel(), d: d });
     }

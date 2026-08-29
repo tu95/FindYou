@@ -8,6 +8,13 @@ Skill 依据：`.skill/SKILL.md`（minitool-zip-builder v1.4.0）及其 4 个 re
 - 源码目录：`xhs_mini_app/`（index.html + assets/）
 - 打包产物：`xhs_mini_tool.zip`
 
+## 结果输出（核心）
+
+每个平台解析后固定输出两样东西：
+
+1. **分享者主页信息**：分享者 ID 大字展示 + 「分享者主页」小按钮（点击自动选中主页链接，长按复制）
+2. **复制脱敏后的分享内容**：大按钮 + 脱敏内容预览框——点击后自动选中脱敏后的完整分享文案（原文中链接替换为脱敏链接），提示长按复制；容器无剪贴板 API，按规范用「展示可选中文本 + 引导手动复制」实现
+
 ## 与 Web 项目保持同步
 
 解析逻辑与 Web 项目（`lib/platforms/`，findYourNetEaseCloudMusic）逐项对齐，算法逐字移植：
@@ -44,7 +51,7 @@ Skill 依据：`.skill/SKILL.md`（minitool-zip-builder v1.4.0）及其 4 个 re
 
 ### 正确性 — ✅ 通过
 - [x] `node --check` 语法零错误
-- [x] 解析逻辑真实运行测试：**57 个用例全部通过**（shareRedId 解码、appuid、web_share、uct2 移动端/PC Salted 端、旧版 uct、hash 链接、userid 明文、activity_info、裸 ID 识别、短链/主页反查的联网提示、负例）
+- [x] 解析逻辑真实运行测试：**64 个用例全部通过**（shareRedId 解码、appuid、web_share、uct2 移动端/PC Salted 端、旧版 uct、hash 链接、userid 明文、activity_info、裸 ID 识别、短链/主页反查的联网提示、脱敏内容生成、负例）
 - [x] 测试向量由 web 项目同款 crypto-js 算法生成，双向验证
 
 ### 跨端（cross-platform-h5.md）— ✅ 通过
