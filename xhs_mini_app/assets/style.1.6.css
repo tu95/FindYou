@@ -41,7 +41,7 @@ body::after { width: 170px; height: 170px; bottom: 50px; left: -60px; }
   padding: 20px 16px calc(28px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
-/* ---------- 头部（CSS 绘制的小怪兽） ---------- */
+/* ---------- 头部（CSS 绘制的小怪兽，多层光影细节版） ---------- */
 
 .app-header { text-align: center; padding: 0 0 2px; }
 .app-title {
@@ -56,83 +56,145 @@ body::after { width: 170px; height: 170px; bottom: 50px; left: -60px; }
 }
 .app-sub { font-size: 13px; color: #9A9EC8; margin-top: 6px; letter-spacing: 0.5px; }
 
-.beast { position: relative; width: 150px; height: 156px; margin: 0 auto; }
+.beast { position: relative; width: 150px; height: 158px; margin: 0 auto; }
 
+/* 身体：顶部高光 + 底部环境光 + 主渐变 + 内外阴影 */
 .beast-body {
   position: absolute;
   left: 50%;
-  top: 6px;
-  width: 118px;
-  height: 132px;
+  top: 4px;
+  width: 120px;
+  height: 134px;
   transform: translateX(-50%);
   transform-origin: bottom center;
-  background: linear-gradient(180deg, var(--beast-white) 0%, var(--beast-shade) 100%);
+  background:
+    radial-gradient(ellipse 55% 40% at 50% 16%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(ellipse 120% 90% at 50% 108%, rgba(109, 113, 230, 0.10) 0%, rgba(109, 113, 230, 0) 55%),
+    linear-gradient(180deg, #FFFFFF 0%, #F3F5FF 70%, #E3E7FB 100%);
   border-radius: 46% 46% 42% 42% / 50% 50% 40% 40%;
   box-shadow:
-    inset 0 -10px 18px rgba(109, 113, 230, 0.10),
-    0 8px 16px rgba(109, 113, 230, 0.22);
+    inset 0 -12px 20px rgba(109, 113, 230, 0.12),
+    inset 0 6px 12px rgba(255, 255, 255, 0.85),
+    0 10px 20px rgba(109, 113, 230, 0.24);
   will-change: transform;
 }
+/* 头顶高光点 */
+.beast-body::before {
+  content: "";
+  position: absolute;
+  left: 20%;
+  top: 5%;
+  width: 30%;
+  height: 11%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 72%);
+  border-radius: 50%;
+  transform: rotate(-16deg);
+}
 
+/* 眼睛：深色渐变 + 高光点（带神） */
 .beast-eye {
   position: absolute;
   top: 52px;
-  width: 11px;
-  height: 11px;
-  background: #2A2C3A;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 32% 28%, #4B4E68 0%, #22242F 72%);
   border-radius: 50%;
-
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+.beast-eye::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 1.5px;
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
 }
 .eye-l { left: 33px; }
 .eye-r { right: 33px; }
 
+/* 腮红 */
+.beast-blush {
+  position: absolute;
+  top: 68px;
+  width: 15px;
+  height: 9px;
+  background: radial-gradient(ellipse at center, rgba(255, 138, 170, 0.5) 0%, rgba(255, 138, 170, 0) 75%);
+  border-radius: 50%;
+}
+.blush-l { left: 15px; }
+.blush-r { right: 15px; }
+
+/* 嘴巴：内凹渐变 + 唇边高光 + 底部暗部 */
 .beast-mouth {
   position: absolute;
   left: 50%;
   top: 74px;
-  width: 54px;
-  height: 36px;
+  width: 56px;
+  height: 38px;
   transform: translateX(-50%);
   transform-origin: center top;
-  background: linear-gradient(180deg, var(--mouth-top) 0%, var(--mouth-bottom) 100%);
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(58, 61, 102, 0.35) 0%, rgba(58, 61, 102, 0) 60%),
+    linear-gradient(180deg, #B2B6F5 0%, #7B7FEA 55%, #6468DB 100%);
   border-radius: 50% 50% 46% 46%;
-  box-shadow: inset 0 5px 9px rgba(58, 61, 102, 0.35);
+  box-shadow:
+    inset 0 5px 10px rgba(58, 61, 102, 0.4),
+    inset 0 -3px 6px rgba(255, 255, 255, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.55);
   will-change: transform;
 }
+.beast-mouth::before {
+  content: "";
+  position: absolute;
+  left: 9%;
+  top: 9%;
+  width: 82%;
+  height: 32%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  border-radius: 50%;
+}
 
+/* 手臂：体积感渐变 + 阴影 */
 .beast-arm {
   position: absolute;
-  top: 78px;
-  width: 21px;
-  height: 27px;
-  background: linear-gradient(180deg, var(--beast-white), var(--beast-shade));
+  top: 80px;
+  width: 22px;
+  height: 28px;
+  background: linear-gradient(160deg, #FFFFFF 30%, #E8EBFB 100%);
   border-radius: 50%;
-  box-shadow: 0 3px 6px rgba(109, 113, 230, 0.18);
+  box-shadow:
+    inset -2px -3px 5px rgba(109, 113, 230, 0.14),
+    0 3px 6px rgba(109, 113, 230, 0.18);
 }
 .arm-l { left: -11px; will-change: transform; }
 .arm-r { right: -11px; will-change: transform; }
 
+/* 小脚：体积感渐变 + 阴影 */
 .beast-leg {
   position: absolute;
-  bottom: -9px;
-  width: 27px;
-  height: 19px;
-  background: linear-gradient(180deg, var(--beast-white), #E7EAFB);
+  bottom: -10px;
+  width: 28px;
+  height: 20px;
+  background: linear-gradient(180deg, #FFFFFF 15%, #E0E4F9 100%);
   border-radius: 42% 42% 46% 46%;
-  box-shadow: 0 3px 5px rgba(109, 113, 230, 0.16);
+  box-shadow:
+    inset 0 -3px 5px rgba(109, 113, 230, 0.14),
+    0 3px 5px rgba(109, 113, 230, 0.16);
 }
 .leg-l { left: 24px; }
 .leg-r { right: 24px; }
 
+/* 影子 */
 .beast-shadow {
   position: absolute;
   left: 50%;
-  bottom: -6px;
-  width: 92px;
+  bottom: -7px;
+  width: 94px;
   height: 16px;
   transform: translateX(-50%);
   background: radial-gradient(ellipse at center, rgba(109, 113, 230, 0.35), transparent 70%);
-
 }
 
 /* 吞掉时掉进嘴里的小链条 */
