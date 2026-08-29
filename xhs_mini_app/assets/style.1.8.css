@@ -130,9 +130,9 @@ body::after { width: 170px; height: 170px; bottom: 50px; left: -60px; }
 .beast-mouth {
   position: absolute;
   left: 50%;
-  top: 77px;
+  top: 79px;
   width: 46px;
-  height: 30px;
+  height: 22px;
   transform: translateX(-50%);
   transform-origin: center top;
   background:
