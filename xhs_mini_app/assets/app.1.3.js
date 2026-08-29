@@ -13,8 +13,8 @@
   var $$ = function (sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); };
 
   var THEME = {
-    xhs: { name: '小红书', color: '#FF2442', dark: '#C9182F', light: '#FFF0F2' },
-    netease: { name: '网易云音乐', color: '#D43C33', dark: '#A82E27', light: '#FDEFED' }
+    xhs: { name: '小红书', color: '#FF2442', light: '#FFF0F2', btn: '#6D71E6' },
+    netease: { name: '网易云音乐', color: '#D43C33', light: '#FDEFED', btn: '#6D71E6' }
   };
 
   var HISTORY_KEY = 'share_parser_history_v1';
@@ -714,7 +714,7 @@
     return '<div class="out-block">'
       + '<div class="out-label">' + label + '</div>'
       + '<div class="out-content selectable" id="clean-text">' + esc(data.cleanUrl || data.cleanText || '') + '</div>'
-      + '<button type="button" class="btn-big" id="clean-copy" style="background:' + t.color + '">复制脱敏后链接</button>'
+      + '<button type="button" class="btn-big" id="clean-copy" style="background:' + (t.btn || t.color) + '">复制脱敏后链接</button>'
       + '<div class="tip" id="clean-tip">点击按钮自动选中链接，长按选择「复制」</div>'
       + '</div>';
   }
@@ -801,21 +801,32 @@
     'net-playlist-uid': '分享歌单\n我的私藏歌单 https://music.163.com/playlist?id=2345678&userid=1234567890 (@网易云音乐)'
   };
 
+  // 吞链兽吞链动画：点「吞掉」时小怪兽吃链条
+  function playEatAnimation() {
+    var beast = $('#beast');
+    if (!beast) return;
+    beast.classList.add('eating');
+    setTimeout(function () { beast.classList.remove('eating'); }, 780);
+  }
+
   function doParse() {
     var box = $('#result');
     var text = $('#input').value.trim();
     if (!text) {
-      box.innerHTML = '<div class="empty">请先在上方粘贴小红书或网易云音乐的分享内容，再点「解析」</div>';
+      box.innerHTML = '<div class="empty">请先在上方粘贴小红书或网易云音乐的分享内容，再点「吞掉」</div>';
       box.hidden = false;
       return;
     }
-    var r = resolveInput(text);
-    if (!r.ok) {
-      box.innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
-      box.hidden = false;
-      return;
-    }
-    renderResult(r.data);
+    playEatAnimation();
+    setTimeout(function () {
+      var r = resolveInput(text);
+      if (!r.ok) {
+        box.innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
+        box.hidden = false;
+        return;
+      }
+      renderResult(r.data);
+    }, 560);
   }
 
   function doClear() {

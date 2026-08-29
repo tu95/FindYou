@@ -1,0 +1,389 @@
+/* ===== 吞链兽 · 分享解析小工具 · 小怪兽主题（CSS 绘制动画小怪兽） ===== */
+
+:root {
+  --ink: #3A3D66; --sub: #8B8FB8;
+  --primary: #6D71E6; --primary-dark: #5A5ED8;
+  --soft: #EEEFFC;
+  --bg-top: #C3D0F6; --bg-mid: #DFDAF4; --bg-bottom: #F2ECFA;
+  --card: #FFFFFF; --border: #D9DBF5;
+  --xhs: #FF2442; --xhs-light: #FFF0F2;
+  --net: #D43C33; --net-light: #FDEFED;
+  --beast-white: #FFFFFF; --beast-shade: #EEF1FF;
+  --mouth-top: #A8ACF2; --mouth-bottom: #7B7FEA;
+}
+
+html { touch-action: manipulation; }
+
+body {
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bottom) 100%);
+  background-attachment: fixed;
+  color: var(--ink);
+}
+
+/* 背景模糊气泡（模仿图里的光斑） */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.32);
+  pointer-events: none;
+  z-index: 0;
+}
+body::before { width: 230px; height: 230px; top: -70px; right: -60px; }
+body::after { width: 170px; height: 170px; bottom: 50px; left: -60px; }
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
+
+/* ---------- 头部（CSS 绘制的小怪兽） ---------- */
+
+.app-header { text-align: center; padding: 0 0 2px; }
+.app-title { font-size: 28px; font-weight: 900; margin-top: 6px; letter-spacing: 2px; }
+.app-sub { font-size: 13px; color: var(--sub); margin-top: 6px; }
+
+.beast { position: relative; width: 150px; height: 156px; margin: 0 auto; }
+
+.beast-body {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 118px;
+  height: 132px;
+  transform: translateX(-50%);
+  transform-origin: bottom center;
+  background: linear-gradient(180deg, var(--beast-white) 0%, var(--beast-shade) 100%);
+  border-radius: 46% 46% 42% 42% / 50% 50% 40% 40%;
+  box-shadow:
+    inset 0 -10px 18px rgba(109, 113, 230, 0.10),
+    0 8px 16px rgba(109, 113, 230, 0.22);
+  animation: beast-bob 2.6s ease-in-out infinite;
+}
+
+.beast-eye {
+  position: absolute;
+  top: 52px;
+  width: 11px;
+  height: 11px;
+  background: #2A2C3A;
+  border-radius: 50%;
+  animation: beast-blink 4.2s ease-in-out infinite;
+}
+.eye-l { left: 33px; }
+.eye-r { right: 33px; }
+
+.beast-mouth {
+  position: absolute;
+  left: 50%;
+  top: 74px;
+  width: 54px;
+  height: 36px;
+  transform: translateX(-50%);
+  transform-origin: center top;
+  background: linear-gradient(180deg, var(--mouth-top) 0%, var(--mouth-bottom) 100%);
+  border-radius: 50% 50% 46% 46%;
+  box-shadow: inset 0 5px 9px rgba(58, 61, 102, 0.35);
+  animation: beast-mouth 2.6s ease-in-out infinite;
+}
+
+.beast-arm {
+  position: absolute;
+  top: 78px;
+  width: 21px;
+  height: 27px;
+  background: linear-gradient(180deg, var(--beast-white), var(--beast-shade));
+  border-radius: 50%;
+  box-shadow: 0 3px 6px rgba(109, 113, 230, 0.18);
+}
+.arm-l { left: -11px; animation: arm-l 2.6s ease-in-out infinite; }
+.arm-r { right: -11px; animation: arm-r 2.6s ease-in-out infinite; }
+
+.beast-leg {
+  position: absolute;
+  bottom: -9px;
+  width: 27px;
+  height: 19px;
+  background: linear-gradient(180deg, var(--beast-white), #E7EAFB);
+  border-radius: 42% 42% 46% 46%;
+  box-shadow: 0 3px 5px rgba(109, 113, 230, 0.16);
+}
+.leg-l { left: 24px; }
+.leg-r { right: 24px; }
+
+.beast-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 92px;
+  height: 16px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(109, 113, 230, 0.35), transparent 70%);
+  animation: beast-shadow 2.6s ease-in-out infinite;
+}
+
+/* 吞掉时掉进嘴里的小链条 */
+.beast-chain {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  opacity: 0;
+  z-index: 2;
+}
+.beast-chain i {
+  display: inline-block;
+  width: 14px;
+  height: 9px;
+  border: 2.5px solid var(--primary);
+  border-radius: 6px;
+  margin-left: -5px;
+  background: rgba(255, 255, 255, 0.6);
+}
+.beast-chain i:first-child { margin-left: 0; }
+
+/* ---------- 小怪兽动画 ---------- */
+
+@keyframes beast-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0) scaleY(1); }
+  50% { transform: translateX(-50%) translateY(-7px) scaleY(1.02); }
+}
+@keyframes beast-shadow {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+  50% { transform: translateX(-50%) scale(0.8); opacity: 0.65; }
+}
+@keyframes beast-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.12); }
+}
+@keyframes beast-mouth {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(0.82); }
+}
+@keyframes arm-l {
+  0%, 100% { transform: rotate(12deg); }
+  50% { transform: rotate(24deg) translateY(-3px); }
+}
+@keyframes arm-r {
+  0%, 100% { transform: rotate(-12deg); }
+  50% { transform: rotate(-24deg) translateY(-3px); }
+}
+
+/* 吞链动画（点「吞掉」时触发） */
+.beast.eating .beast-body { animation: beast-eat 0.72s ease-in-out; }
+.beast.eating .beast-mouth { animation: beast-eat-mouth 0.72s ease-in-out; }
+.beast.eating .beast-chain { animation: chain-drop 0.72s ease-in forwards; }
+
+@keyframes beast-eat {
+  0% { transform: translateX(-50%) scaleY(1) scaleX(1); }
+  35% { transform: translateX(-50%) scaleY(0.8) scaleX(1.12); }
+  70% { transform: translateX(-50%) scaleY(1.07) scaleX(0.94); }
+  100% { transform: translateX(-50%) scaleY(1) scaleX(1); }
+}
+@keyframes beast-eat-mouth {
+  0% { transform: translateX(-50%) scale(1); }
+  30% { transform: translateX(-50%) scale(1.55); }
+  65% { transform: translateX(-50%) scale(0.6); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+@keyframes chain-drop {
+  0% { opacity: 1; transform: translateX(-50%) translateY(-12px) scale(1); }
+  65% { opacity: 1; transform: translateX(-50%) translateY(66px) scale(0.9); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(80px) scale(0.3); }
+}
+
+/* ---------- 卡片 ---------- */
+
+.card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 16px;
+  margin-top: 16px;
+  box-shadow: 0 10px 30px rgba(109, 113, 230, 0.14);
+}
+.card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+.card-title .history-count { font-size: 12px; color: var(--sub); font-weight: 400; }
+
+/* ---------- 输入 ---------- */
+
+.input {
+  width: 100%;
+  min-height: 120px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: inherit;
+  color: var(--ink);
+  background: #FAFAFF;
+  resize: vertical;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.input:focus { outline: none; border-color: var(--primary); background: #FFFFFF; }
+
+/* ---------- 按钮 ---------- */
+
+.btn-row { display: flex; gap: 10px; margin-top: 12px; }
+.btn {
+  flex: 1;
+  border: 0;
+  border-radius: 14px;
+  padding: 13px 0;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+}
+.btn:active { opacity: 0.75; }
+.btn-primary {
+  background: var(--primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 0 var(--primary-dark);
+}
+.btn-primary:active { transform: translateY(2px); box-shadow: none; opacity: 1; }
+.btn-ghost { background: var(--soft); color: var(--ink); }
+.btn-block { width: 100%; flex: none; margin-top: 10px; }
+
+/* ---------- 示例 chips ---------- */
+
+.samples { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sample-label { font-size: 12px; color: var(--sub); }
+.chip {
+  border: 1.5px solid var(--border);
+  background: #FFFFFF;
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 12px;
+  color: var(--sub);
+  font-family: inherit;
+}
+.chip:active { background: var(--soft); }
+
+/* ---------- 解析结果 ---------- */
+
+.result { padding-top: 14px; }
+.result-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.result-time { font-size: 12px; color: var(--sub); }
+
+/* 输出块 */
+.out-block {
+  margin-top: 12px;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  background: #F7F7FE;
+}
+.out-label { font-size: 12px; color: var(--sub); letter-spacing: 1px; }
+.selectable, .out-content { -webkit-user-select: text; user-select: text; }
+.out-content {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 180px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+.out-content.flash { background: rgba(255, 200, 60, 0.35); border-radius: 6px; }
+
+.btn-sm {
+  flex: none;
+  border: 1.5px solid var(--primary);
+  background: #FFFFFF;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--primary);
+  margin-top: 10px;
+}
+.btn-sm:active { background: var(--soft); }
+.btn-big {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 14px;
+  padding: 16px 0;
+  font-size: 17px;
+  font-weight: 800;
+  font-family: inherit;
+  color: #FFFFFF;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18);
+}
+.btn-big:active { transform: translateY(1px); box-shadow: none; }
+
+.tip { font-size: 12px; color: var(--sub); margin-top: 10px; line-height: 1.6; }
+.empty { color: var(--sub); font-size: 14px; text-align: center; padding: 18px 8px; line-height: 1.7; }
+
+/* ---------- 提示块 ---------- */
+
+.notice {
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 8px 0 4px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5A4A00;
+  background: #FFF8E1;
+  border: 1px solid #F2DFA0;
+}
+.notice-warn {
+  color: #8A3B00;
+  background: #FFF3E0;
+  border-color: #F5C99A;
+}
+
+/* ---------- 历史 ---------- */
+
+.history-card { padding-top: 14px; }
+.hist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: #FAFAFF;
+  border-radius: 12px;
+  padding: 11px 12px;
+  margin-bottom: 8px;
+  font-family: inherit;
+  text-align: left;
+}
+.hist-row:active { background: var(--soft); }
+.hist-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.hist-main {
+  flex: 1;
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hist-time { flex: none; font-size: 11px; color: var(--sub); }
+
+/* ---------- 页脚 ---------- */
+
+.app-footer {
+  text-align: center;
+  font-size: 11px;
+  color: #A3A6CC;
+  padding: 14px 0 4px;
+  letter-spacing: 0.5px;
+}
