@@ -8,6 +8,11 @@ Skill 依据：`.skill/SKILL.md`（minitool-zip-builder v1.4.0）及其 4 个 re
 - 源码目录：`xhs_mini_app/`（index.html + assets/）
 - 打包产物：`xhs_mini_tool.zip`
 
+## 使用方式
+
+- **单一输入框**：粘贴小红书或网易云音乐的分享文案，自动识别平台（无需手动切换），不区分平台标签
+- 已按环境约束**移除抖音模块**（短链跳转 / 用户反查需联网，容器不联网无法使用）
+
 ## 结果输出（核心）
 
 每个平台解析后固定输出两样东西：
@@ -23,9 +28,8 @@ Skill 依据：`.skill/SKILL.md`（minitool-zip-builder v1.4.0）及其 4 个 re
 | --- | --- | --- |
 | 小红书 | `shareRedId` 本地解码（Base64url + 固定密钥移位）、`appuid` 明文、`user_profile` 主页、`web_share` 网页版说明、脱敏（抹 `shareRedId`/`appuid`）、meta（xsec_token / apptime / xhsshare / share_id / app_version） | xiaohongshu/{decode,url,index,sanitize}.ts |
 | 网易云 | `userid` 明文、`uct2`（移动端 AES-ECB / PC 端 Salted EVP_BytesToKey）、旧版 `uct`、`user/home` 主页、hash 形态链接（`#/song?id=..`）、脱敏（抹 `userid`/`uct2`/`uct`） | netease/{decode,url,index,sanitize}.ts |
-| 抖音 | 输入识别（短链/视频/主页/裸 aweme_id/uid/sec_uid）、`activity_info` 本地解析（分享者 ID / 分享时间 / 分享事件）、脱敏（抹 `activity_info`/`u_code`） | douyin/{decode,url,index,sanitize}.ts |
 
-**容器不联网的边界**（明确提示，不报错）：xhslink / 163cn.tv / v.douyin.com 短链需联网跳转、抖音用户主页反查需在线接口——小工具内给出说明并建议使用完整链接或网站版。
+**容器不联网的边界**（明确提示，不报错）：xhslink / 163cn.tv 口令短链需联网跳转才能拿到分享者参数——小工具内给出说明并建议使用完整链接或网站版；抖音模块因整体依赖联网已移除。
 
 **说明**：网易云 uct2/uct 与小红书 shareRedId 的解码密钥随离线包内置（小工具纯本地解码所必需）；Web 项目密钥仍只在服务端，不受影响。
 
@@ -51,7 +55,7 @@ Skill 依据：`.skill/SKILL.md`（minitool-zip-builder v1.4.0）及其 4 个 re
 
 ### 正确性 — ✅ 通过
 - [x] `node --check` 语法零错误
-- [x] 解析逻辑真实运行测试：**64 个用例全部通过**（shareRedId 解码、appuid、web_share、uct2 移动端/PC Salted 端、旧版 uct、hash 链接、userid 明文、activity_info、裸 ID 识别、短链/主页反查的联网提示、脱敏内容生成、负例）
+- [x] 解析逻辑真实运行测试：**49 个用例全部通过**（平台自动识别、shareRedId 解码、appuid、web_share、uct2 移动端/PC Salted 端、旧版 uct、hash 链接、userid 明文、短链联网提示、脱敏内容生成、负例）
 - [x] 测试向量由 web 项目同款 crypto-js 算法生成，双向验证
 
 ### 跨端（cross-platform-h5.md）— ✅ 通过

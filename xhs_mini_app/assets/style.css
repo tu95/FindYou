@@ -3,7 +3,6 @@
 :root {
   --xhs: #FF2442; --xhs-dark: #C9182F; --xhs-light: #FFF0F2;
   --net: #D43C33; --net-dark: #A82E27; --net-light: #FDEFED;
-  --dy: #161823; --dy-dark: #0B0C10; --dy-light: #F2F3F5;
   --bg: #F5F5F7; --card: #FFFFFF; --text: #1F2329; --sub: #8A9099;
   --border: #ECECF0;
 }
@@ -24,32 +23,6 @@ body { background: var(--bg); }
 .app-logo { font-size: 38px; line-height: 1; }
 .app-title { font-size: 20px; font-weight: 700; margin-top: 8px; letter-spacing: 0.5px; }
 .app-sub { font-size: 12px; color: var(--sub); margin-top: 5px; }
-
-/* ---------- 标签页 ---------- */
-
-.tabs {
-  display: flex;
-  background: var(--card);
-  border-radius: 14px;
-  padding: 4px;
-  margin: 18px 0 14px;
-  box-shadow: 0 2px 12px rgba(31, 35, 41, 0.05);
-}
-.tab {
-  flex: 1;
-  border: 0;
-  background: transparent;
-  padding: 11px 0;
-  border-radius: 11px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--sub);
-  font-family: inherit;
-}
-.tab.is-active { color: #FFFFFF; }
-#tabs[data-active="xhs"] .tab.is-active { background: var(--xhs); }
-#tabs[data-active="netease"] .tab.is-active { background: var(--net); }
-#tabs[data-active="douyin"] .tab.is-active { background: var(--dy); }
 
 /* ---------- 卡片 ---------- */
 
@@ -97,7 +70,6 @@ body { background: var(--bg); }
 .btn:active { opacity: 0.75; }
 .btn-xhs { background: var(--xhs); color: #FFFFFF; }
 .btn-net { background: var(--net); color: #FFFFFF; }
-.btn-dy { background: var(--dy); color: #FFFFFF; }
 .btn-ghost { background: #F2F3F5; color: var(--text); }
 .btn-block { width: 100%; flex: none; margin-top: 10px; }
 
@@ -152,8 +124,6 @@ code {
 .link { color: var(--xhs); word-break: break-all; }
 .result[data-platform="netease"] .link { color: var(--net); }
 .result[data-platform="netease"] code { background: var(--net-light); }
-.result[data-platform="douyin"] .link { color: var(--dy); }
-.result[data-platform="douyin"] code { background: var(--dy-light); }
 
 .selectable, .link { -webkit-user-select: text; user-select: text; }
 
@@ -165,7 +135,6 @@ code {
   margin: 10px 0 4px;
   background: linear-gradient(135deg, #FFF8F0, #FFFFFF);
 }
-.result[data-platform="douyin"] .sharer-box { background: linear-gradient(135deg, #F6F6F8, #FFFFFF); }
 .sharer-label { font-size: 12px; color: var(--sub); letter-spacing: 1px; }
 .sharer-id {
   margin-top: 4px;
@@ -200,7 +169,6 @@ code {
   padding: 12px;
   background: #FFFEF8;
 }
-.result[data-platform="douyin"] .clean-box { background: #FBFBFC; }
 .clean-label { font-size: 12px; color: var(--sub); letter-spacing: 1px; }
 .clean-content {
   margin-top: 8px;
