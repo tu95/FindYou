@@ -19,6 +19,7 @@
 
   var HISTORY_KEY = 'share_parser_history_v1';
   var currentCardUrl = '';
+  var lastData = null;
 
   /* ============================================================
    * 基础工具
@@ -728,6 +729,7 @@
       }
       addHistory({ platform: d.platform, label: label, time: nowLabel(), d: d });
     }
+    lastData = d;
   }
 
   function wireCleanCopy() {
@@ -969,7 +971,7 @@
   }
 
   /* ============================================================
-   * 交互绑定
+   * 交互绑定（全局事件委托：不依赖初始化顺序，任何环境下按钮都能响应）
    * ============================================================ */
 
   var SAMPLES = {
@@ -980,58 +982,96 @@
     'net-playlist-uid': '分享歌单\n我的私藏歌单 https://music.163.com/playlist?id=2345678&userid=1234567890 (@网易云音乐)'
   };
 
-  function init() {
-    $('#parse-btn').addEventListener('click', function () {
-      var box = $('#result');
-      var text = $('#input').value.trim();
-      if (!text) {
-        // 不用 alert：部分嵌入环境会拦截弹窗导致“点了没反应”，改内联提示
-        box.innerHTML = '<div class="empty">请先在上方粘贴小红书或网易云音乐的分享内容，再点「解析」</div>';
-        box.hidden = false;
-        return;
-      }
-      var r = resolveInput(text);
-      if (!r.ok) {
-        box.innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
-        box.hidden = false;
-        return;
-      }
-      renderResult(r.data);
-    });
-    $('#clear-btn').addEventListener('click', function () {
-      $('#input').value = '';
-      $('#result').hidden = true;
-    });
-
-    $$('.chip').forEach(function (c) {
-      c.addEventListener('click', function () {
-        var s = SAMPLES[c.getAttribute('data-sample')];
-        if (s) $('#input').value = s;
-      });
-    });
-
-    document.addEventListener('click', function (e) {
-      var el = e.target && e.target.closest ? e.target.closest('[data-copy]') : null;
-      if (el) selectText(el);
-    });
-
-    $('#history-clear').addEventListener('click', function () {
-      saveHistory([]);
-      renderHistory();
-    });
-
-    $('#card-save').addEventListener('click', saveCardToAlbum);
-
-    // 全局兜底：任何未捕获异常都在结果区显示，避免“点了没反应”
-    window.addEventListener('error', function (e) {
-      var box = $('#result');
-      if (!box) return;
-      box.innerHTML = '<div class="empty">😵 出错了：' + esc(e.message || '未知错误') + '</div>';
+  function doParse() {
+    var box = $('#result');
+    var text = $('#input').value.trim();
+    if (!text) {
+      box.innerHTML = '<div class="empty">请先在上方粘贴小红书或网易云音乐的分享内容，再点「解析」</div>';
       box.hidden = false;
-    });
-
-    renderHistory();
+      return;
+    }
+    var r = resolveInput(text);
+    if (!r.ok) {
+      box.innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
+      box.hidden = false;
+      return;
+    }
+    renderResult(r.data);
   }
+
+  function doClear() {
+    $('#input').value = '';
+    $('#result').hidden = true;
+  }
+
+  function doCleanCopy() {
+    var el = $('#clean-text');
+    if (!el) return;
+    selectText(el);
+    el.classList.add('flash');
+    var tip = $('#clean-tip');
+    if (tip) tip.textContent = '✅ 已选中上方内容，长按选择「复制」即可转发';
+    setTimeout(function () { el.classList.remove('flash'); }, 800);
+  }
+
+  function doProfileSelect() {
+    var el = $('#profile-url');
+    if (!el) return;
+    selectText(el);
+    el.classList.add('flash');
+  }
+
+  // 统一按钮路由（含动态渲染出的按钮）
+  function onDocClick(e) {
+    var t = e.target;
+    var btn = t && t.closest ? t.closest('button') : null;
+    if (!btn) return;
+
+    var sampleKey = btn.getAttribute && btn.getAttribute('data-sample');
+    if (sampleKey) {
+      var s = SAMPLES[sampleKey];
+      if (s) $('#input').value = s;
+      return;
+    }
+
+    switch (btn.id) {
+      case 'parse-btn': doParse(); break;
+      case 'clear-btn': doClear(); break;
+      case 'clean-copy': doCleanCopy(); break;
+      case 'profile-btn': doProfileSelect(); break;
+      case 'open-btn': if (lastData) openXhsNote(lastData); break;
+      case 'card-btn': if (lastData) makeCard(lastData.platform, lastData); break;
+      case 'card-save': saveCardToAlbum(); break;
+      case 'history-clear': saveHistory([]); renderHistory(); break;
+      default: break;
+    }
+  }
+
+  // data-copy 链接点击 → 自动选中文本
+  function onDocCopyClick(e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-copy]') : null;
+    if (el) selectText(el);
+  }
+
+  function init() {
+    try {
+      var ok = $('#js-ok');
+      if (ok) ok.hidden = false;
+      renderHistory();
+    } catch (e) {}
+  }
+
+  // 全部用事件委托：即便某个初始化步骤失败，按钮依然可点
+  document.addEventListener('click', onDocClick);
+  document.addEventListener('click', onDocCopyClick);
+
+  // 全局兜底：任何未捕获异常都在结果区显示，避免“点了没反应”
+  window.addEventListener('error', function (e) {
+    var box = $('#result');
+    if (!box) return;
+    box.innerHTML = '<div class="empty">😵 出错了：' + esc(e.message || '未知错误') + '</div>';
+    box.hidden = false;
+  });
 
   document.addEventListener('DOMContentLoaded', init);
 })();
