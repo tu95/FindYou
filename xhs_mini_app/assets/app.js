@@ -58,6 +58,13 @@
     sel.addRange(range);
   }
 
+  // 滚动到元素（部分环境无此 API，失败不影响主流程）
+  function safeScroll(el) {
+    try {
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) {}
+  }
+
   // 生成「脱敏后的分享内容」：把原文里的链接替换成脱敏链接；原文没有链接时直接输出脱敏链接
   function buildCleanShareText(originalText, data) {
     var text = originalText || '';
@@ -705,7 +712,7 @@
     html += '<div class="tip">点击链接自动选中文本，长按可「复制」</div>';
     box.innerHTML = html;
     box.hidden = false;
-    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    safeScroll(box);
 
     var openBtn = $('#open-btn');
     if (openBtn) openBtn.addEventListener('click', function () { openXhsNote(d); });
@@ -958,7 +965,7 @@
     var img = $('#card-img');
     img.src = currentCardUrl;
     $('#card-preview').hidden = false;
-    $('#card-preview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    safeScroll($('#card-preview'));
   }
 
   /* ============================================================
@@ -975,12 +982,18 @@
 
   function init() {
     $('#parse-btn').addEventListener('click', function () {
+      var box = $('#result');
       var text = $('#input').value.trim();
-      if (!text) { alert('请先粘贴分享内容'); return; }
+      if (!text) {
+        // 不用 alert：部分嵌入环境会拦截弹窗导致“点了没反应”，改内联提示
+        box.innerHTML = '<div class="empty">请先在上方粘贴小红书或网易云音乐的分享内容，再点「解析」</div>';
+        box.hidden = false;
+        return;
+      }
       var r = resolveInput(text);
       if (!r.ok) {
-        $('#result').innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
-        $('#result').hidden = false;
+        box.innerHTML = '<div class="empty">' + esc(r.reason).replace(/\n/g, '<br>') + '</div>';
+        box.hidden = false;
         return;
       }
       renderResult(r.data);
@@ -1008,6 +1021,14 @@
     });
 
     $('#card-save').addEventListener('click', saveCardToAlbum);
+
+    // 全局兜底：任何未捕获异常都在结果区显示，避免“点了没反应”
+    window.addEventListener('error', function (e) {
+      var box = $('#result');
+      if (!box) return;
+      box.innerHTML = '<div class="empty">😵 出错了：' + esc(e.message || '未知错误') + '</div>';
+      box.hidden = false;
+    });
 
     renderHistory();
   }
