@@ -46,18 +46,6 @@ export default function Page() {
           priceCurrency: "USD",
         },
       },
-      {
-        "@type": "FAQPage",
-        "@id": absoluteUrl("/#faq"),
-        mainEntity: siteConfig.faqs.map((item) => ({
-          "@type": "Question",
-          name: item.question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: item.answer,
-          },
-        })),
-      },
     ],
   };
 

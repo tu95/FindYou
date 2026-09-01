@@ -7,9 +7,6 @@ import { ResultView } from "./result-view";
 import type { ResolveResult } from "@/lib/platforms";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 
-// FAQ 卡片按孟菲斯四色轮换，棋盘格错开
-const faqCardColors = ["bg-sun", "bg-candy", "bg-lagoon", "bg-tomato"];
-
 // 手绘感波浪线（黑色实线，圆头），孟菲斯剪贴画装饰
 function Squiggle({ className = "" }: { className?: string }) {
   return (
@@ -125,18 +122,6 @@ export function DecoderShell() {
             <p className="mt-4 text-sm leading-7 text-black/75 sm:text-base sm:leading-8">
               这个工具完全免费，你贴进来的链接只用来查这一次，不会被保存。
             </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
-            {siteConfig.faqs.map((item, index) => (
-              <article
-                key={item.question}
-                className={`border-[3px] border-black p-5 shadow-[5px_5px_0_#000] ${faqCardColors[index % faqCardColors.length]}`}
-              >
-                <h3 className="text-base font-black text-black sm:text-lg">{item.question}</h3>
-                <p className="mt-2.5 text-sm leading-6 text-black/80 sm:leading-7">{item.answer}</p>
-              </article>
-            ))}
           </div>
 
           <div className="space-y-6">

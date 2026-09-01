@@ -1,12 +1,12 @@
-# findYourNetEaseCloudMusic
+# FindYou
 
 从网易云音乐、小红书、抖音的分享链接中识别分享者 UID / 用户 ID，并打开对应的用户主页。
 
-English: findYourNetEaseCloudMusic helps find the sharer UID from a NetEase Cloud Music share link, a Xiaohongshu (RED) share link, or a Douyin share link.
+English: FindYou helps find the sharer UID from a NetEase Cloud Music share link, a Xiaohongshu (RED) share link, or a Douyin share link.
 
 ## 一句话介绍
 
-findYourNetEaseCloudMusic 是一个分享链接分享者解析工具。它可以从**网易云音乐**、**小红书**和**抖音**的分享链接、复制的分享文本中识别分享者 UID / 用户 ID，并生成对应的用户主页链接。
+FindYou 是一个分享链接分享者解析工具。它可以从**网易云音乐**、**小红书**和**抖音**的分享链接、复制的分享文本中识别分享者 UID / 用户 ID，并生成对应的用户主页链接。
 
 - 网易云：从 share link、复制的分享文本或包含 `uct2` / `uct` 等分享参数的链接中识别分享者 UID
 - 小红书：从完整分享链接或 `xhslink.com` 短链中提取 `shareRedId`，纯本地解码（Base64 + 固定密钥移位）得到分享者用户 ID；旧版链接直接读取明文 `appuid` 参数
@@ -16,7 +16,7 @@ Keywords: 网易云音乐分享链接、网易云 UID、分享者 UID、网易�
 
 ## 项目定位
 
-findYourNetEaseCloudMusic 是一个小工具，目标是把分享链接里的分享者信息解析过程做得更透明。你可以直接使用网页。
+FindYou 是一个小工具，目标是把分享链接里的分享者信息解析过程做得更透明。你可以直接使用网页。
 
 适合这些场景：
 
@@ -106,8 +106,8 @@ findYourNetEaseCloudMusic 是一个小工具，目标是把分享链接里的分
 ## 本地开发
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 打开 `http://localhost:3000` 即可使用。
@@ -115,8 +115,8 @@ npm run dev
 常用命令：
 
 ```bash
-npm run lint
-npm run build
+pnpm lint
+pnpm build
 ```
 
 ## 技术栈

@@ -31,8 +31,6 @@ export function GET() {
     "## Privacy Boundary",
     "The page only submits the pasted link or share text to the resolver endpoint and does not expose a user history feature.",
     "",
-    "## FAQ",
-    ...siteConfig.faqs.flatMap((item) => [`### ${item.question}`, item.answer, ""]),
     "## Useful Pages",
     `- Home: ${absoluteUrl("/")}`,
     `- Robots: ${absoluteUrl("/robots.txt")}`,

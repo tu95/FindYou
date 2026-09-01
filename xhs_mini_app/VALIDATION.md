@@ -22,7 +22,7 @@ Skill 依据：`.skill/SKILL.md`（minitool-zip-builder v1.4.0）及其 4 个 re
 
 ## 与 Web 项目保持同步
 
-解析逻辑与 Web 项目（`lib/platforms/`，findYourNetEaseCloudMusic）逐项对齐，算法逐字移植：
+解析逻辑与 Web 项目（`lib/platforms/`，FindYou）逐项对齐，算法逐字移植：
 
 | 平台 | 同步的能力 | Web 项目对应文件 |
 | --- | --- | --- |
