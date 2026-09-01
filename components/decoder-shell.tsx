@@ -177,6 +177,18 @@ export function DecoderShell() {
               <p className="mt-3 font-mono text-xs leading-6 text-black/50">
                 上面这些是给搜索引擎和 AI 看的，普通用户不用管。{absoluteUrl("/")}
               </p>
+              <p className="mt-2 font-mono text-xs leading-6 text-black/60">
+                UI 风格参考{" "}
+                <a
+                  href="https://design-vibes.v2ai.org/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-black underline decoration-candy decoration-2 underline-offset-4 transition-colors hover:decoration-black focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-black"
+                >
+                  Design Vibes · 网页设计风格大全
+                </a>
+                ，感谢提供设计灵感。
+              </p>
             </footer>
           </div>
         </section>
