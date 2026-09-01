@@ -4,6 +4,7 @@ export const siteConfig = {
   shortName: "FindYou",
   englishName: "FindYou",
   repoName: "FindYou",
+  repoUrl: "https://github.com/tu95/FindYou",
   description:
     "FindYou：把网易云音乐、小红书、抖音的分享链接粘贴进来，就能查出这条链接是谁分享的，一键打开对方主页。免费、不存记录。",
   summary:

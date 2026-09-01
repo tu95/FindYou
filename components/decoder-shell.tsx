@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Link2, Music2, Radar, ShieldCheck } from "lucide-react";
+import { Link2, Music2, Radar, ShieldCheck, Star } from "lucide-react";
 import { LinkInput } from "./link-input";
 import { ResultView } from "./result-view";
 import type { ResolveResult } from "@/lib/platforms";
@@ -96,6 +96,17 @@ export function DecoderShell() {
           <p className="mt-5 text-base font-medium leading-7 text-black/70 sm:mt-6 sm:text-xl sm:leading-8">
             支持网易云音乐、小红书、抖音：把分享链接或整段分享文字粘贴进来，马上查出是谁分享的，一键打开对方主页。
           </p>
+          <div className="mt-5 sm:mt-6">
+            <a
+              href={siteConfig.repoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex -rotate-1 items-center gap-2 rounded-full border-[3px] border-black bg-sun px-4 py-1.5 font-mono text-sm font-bold text-black shadow-[4px_4px_0_#000] transition-all hover:-translate-y-0.5 hover:rotate-0 hover:shadow-[5px_5px_0_#000] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-black active:translate-x-0.5 active:translate-y-0.5 active:shadow-none sm:text-base"
+            >
+              <Star className="size-4" aria-hidden="true" />
+              免费开源 · GitHub
+            </a>
+          </div>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 sm:mt-8" aria-hidden="true">
             <Squiggle className="h-4 w-32 sm:w-40" />
             <span className="size-3.5 rounded-full border-[3px] border-black bg-sun" />

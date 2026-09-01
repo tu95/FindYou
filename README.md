@@ -54,4 +54,4 @@ pnpm install && pnpm dev   # http://localhost:3000
 - 🔍 [ahxxm.com：相关逆向分析](https://ahxxm.com/173.moew/) —— 关键思路出处，太强了！
 - 🎨 [Design Vibes · 网页设计风格大全](https://design-vibes.v2ai.org/) —— 本站 UI 的灵感来源，孟菲斯超好看！！
 
-仅供技术研究与个人学习，请勿把解析结果用于骚扰、跟踪或侵犯他人隐私。私有项目，未经授权禁止复制、分发或商用。
+仅供技术研究与个人学习，请勿把解析结果用于骚扰、跟踪或侵犯他人隐私。免费开源：https://github.com/tu95/FindYou
