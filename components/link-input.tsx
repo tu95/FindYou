@@ -20,7 +20,7 @@ export function LinkInput({ value, loading, onChange, onSubmit }: LinkInputProps
         className="flex items-center gap-2.5 text-lg font-black text-black sm:text-xl"
         htmlFor="share-link"
       >
-        <span className="flex size-8 items-center justify-center border-2 border-black bg-[#F7C548] shadow-[3px_3px_0_#000]">
+        <span className="flex size-8 items-center justify-center border-[3px] border-black bg-sun shadow-[3px_3px_0_#000]">
           <Link2 className="size-4" aria-hidden="true" />
         </span>
         分享链接
@@ -30,12 +30,12 @@ export function LinkInput({ value, loading, onChange, onSubmit }: LinkInputProps
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="把网易云、小红书、抖音的分享链接或整段分享文字贴到这里"
-        className="min-h-36 w-full resize-y border-[3px] border-black bg-white px-4 py-4 font-mono text-base leading-7 text-black shadow-[6px_6px_0_#000] outline-none transition placeholder:text-neutral-400 focus:shadow-[6px_6px_0_#FF8FD4] sm:min-h-44 sm:px-6 sm:py-5 sm:text-lg sm:leading-8"
+        className="min-h-36 w-full resize-y border-[3px] border-black bg-white px-4 py-4 font-mono text-base leading-7 text-black shadow-[6px_6px_0_#000] outline-none transition placeholder:text-neutral-500 focus:shadow-[6px_6px_0_#00CED1] sm:min-h-44 sm:px-6 sm:py-5 sm:text-lg sm:leading-8"
       />
       <button
         type="submit"
         disabled={loading}
-        className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-[40px] border-[3px] border-black bg-[#FF8FD4] px-6 text-xl font-black text-black shadow-[6px_6px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[8px_8px_0_#000] active:translate-x-1 active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:bg-neutral-300 sm:h-16 sm:text-2xl"
+        className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-full border-[3px] border-black bg-candy px-6 text-xl font-black text-black shadow-[6px_6px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[8px_8px_0_#000] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-black active:translate-x-1 active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:hover:translate-y-0 disabled:hover:shadow-[6px_6px_0_#000] sm:h-16 sm:text-2xl"
       >
         {loading ? (
           <LoaderCircle className="size-6 animate-spin sm:size-7" aria-hidden="true" />

@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
+/* 孟菲斯调色盘：米白底 + 四个糖果色，全站黑色实心描边 */
+@theme {
+  --color-cream: #fff8ec;
+  --color-candy: #ff69b4;
+  --color-sun: #ffd700;
+  --color-tomato: #ff6347;
+  --color-lagoon: #00ced1;
+}
+
 :root {
   color-scheme: light;
-  --background: #faf3e8;
+  --background: var(--color-cream);
   --foreground: #000000;
 }
 
@@ -26,8 +35,22 @@ body {
   overflow-x: hidden;
 }
 
+/* 全站圆点纸屑底纹：亮粉 + 绿松石 + 番茄红三层交错，实心圆点 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle, var(--color-candy) 3px, transparent 3px),
+    radial-gradient(circle, var(--color-lagoon) 3px, transparent 3px),
+    radial-gradient(circle, var(--color-tomato) 3px, transparent 3px);
+  background-size: 64px 64px;
+  background-position: 0 0, 32px 21px, 16px 53px;
+}
+
 ::selection {
-  background: #ff8fd4;
+  background: var(--color-candy);
   color: #000;
 }
 

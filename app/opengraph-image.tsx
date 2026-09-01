@@ -15,7 +15,7 @@ export default function Image() {
       <div
         style={{
           alignItems: "center",
-          background: "#faf3e8",
+          background: "#FFF8EC",
           color: "#000000",
           display: "flex",
           height: "100%",
@@ -29,7 +29,7 @@ export default function Image() {
             background: "#ffffff",
             border: "6px solid #000000",
             borderRadius: 40,
-            boxShadow: "16px 16px 0 #F7C548",
+            boxShadow: "16px 16px 0 #FFD700",
             display: "flex",
             flexDirection: "column",
             gap: 28,
@@ -40,7 +40,7 @@ export default function Image() {
           <div
             style={{
               alignSelf: "flex-start",
-              background: "#FF8FD4",
+              background: "#FF69B4",
               border: "5px solid #000000",
               boxShadow: "8px 8px 0 #000000",
               display: "flex",

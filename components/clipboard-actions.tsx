@@ -38,7 +38,7 @@ export function CopyButton({
     <button
       type="button"
       onClick={copy}
-      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border-[3px] border-black bg-[#F7C548] px-5 font-mono text-sm font-bold text-black shadow-[4px_4px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none sm:h-13 sm:text-base"
+      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border-[3px] border-black bg-sun px-5 font-mono text-sm font-bold text-black shadow-[4px_4px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#000] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-black active:translate-x-0.5 active:translate-y-0.5 active:shadow-none sm:h-13 sm:text-base"
     >
       {copied ? (
         <Check className="size-4.5" aria-hidden="true" />
@@ -65,7 +65,7 @@ export function ShareButton({ text }: { text: string }) {
       onClick={() => {
         void navigator.share({ title: "干净分享链接", text }).catch(() => {});
       }}
-      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border-[3px] border-black bg-[#FF8FD4] px-5 font-mono text-sm font-bold text-black shadow-[4px_4px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none sm:h-13 sm:text-base"
+      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border-[3px] border-black bg-candy px-5 font-mono text-sm font-bold text-black shadow-[4px_4px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#000] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-black active:translate-x-0.5 active:translate-y-0.5 active:shadow-none sm:h-13 sm:text-base"
     >
       <Share2 className="size-4.5" aria-hidden="true" />
       分享
