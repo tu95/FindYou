@@ -45,11 +45,13 @@
 pnpm install && pnpm dev   # http://localhost:3000
 ```
 
-## 参考
+## 特别鸣谢 🎉🎉🎉
 
-- [Secret behind uct2](https://me.onlyra1n.top/posts/secret-behind-uct2)
-- [V2EX：通过网易云音乐分享链接找到分享用户主页](https://www.v2ex.com/t/876017)
-- [ahxxm.com：相关逆向分析](https://ahxxm.com/173.moew/)
-- [Design Vibes · 网页设计风格大全](https://design-vibes.v2ai.org/)（UI 参考）
+没有这些前辈的逆向分析和无私分享，就没有这个项目！强烈推荐阅读！！
+
+- 🔐 [Secret behind uct2](https://me.onlyra1n.top/posts/secret-behind-uct2) —— uct2 解密原理全靠这篇，跪谢！！
+- 💬 [V2EX：通过网易云音乐分享链接找到分享用户主页](https://www.v2ex.com/t/876017) —— 最初的灵感来源，感谢分享精神！
+- 🔍 [ahxxm.com：相关逆向分析](https://ahxxm.com/173.moew/) —— 关键思路出处，太强了！
+- 🎨 [Design Vibes · 网页设计风格大全](https://design-vibes.v2ai.org/) —— 本站 UI 的灵感来源，孟菲斯超好看！！
 
 仅供技术研究与个人学习，请勿把解析结果用于骚扰、跟踪或侵犯他人隐私。私有项目，未经授权禁止复制、分发或商用。
