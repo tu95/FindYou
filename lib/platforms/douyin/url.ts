@@ -78,9 +78,10 @@ export function identifyDouyinInput(input: string): DouyinInput | null {
       return { kind: "user_url", url, secUid: segments[1] };
     }
 
-    const videoMatch = url.match(/\/(?:video|share\/video)\/(\d{19})/);
-    if (videoMatch) {
-      return { kind: "video_url", url, awemeId: videoMatch[1] };
+    // 作品 ID：路径里第一个 19 位纯数字段（视频/图文/未来新形态通用）
+    const awemeId = segments.find((segment) => AWEME_ID_PATTERN.test(segment));
+    if (awemeId) {
+      return { kind: "video_url", url, awemeId };
     }
   } catch {
     return null;
@@ -95,5 +96,16 @@ export function isDirectUrlInput(input: string) {
     return true;
   } catch {
     return false;
+  }
+}
+
+// 从 URL 路径里通用提取作品 ID：不按 video/note 等内容类型词白名单匹配，
+// 任何形态的作品 ID 都是 19 位纯数字路径段（/share/video/{id}、/share/note/{id} 及未来新形态通吃）
+export function extractAwemeIdFromUrl(url: string): string | undefined {
+  try {
+    const segments = new URL(url).pathname.split("/").filter(Boolean);
+    return segments.find((segment) => AWEME_ID_PATTERN.test(segment));
+  } catch {
+    return undefined;
   }
 }

@@ -5,7 +5,7 @@ import { DOUYIN_HOME_PREFIX, DOUYIN_PLATFORM_ID, DOUYIN_PLATFORM_LABEL, DOUYIN_V
 import { getTtwid, getUserProfile } from "./api";
 import { parseActivityInfo } from "./decode";
 import { sanitizeDouyinUrl, stripDouyinSharerParams } from "./sanitize";
-import { identifyDouyinInput, isDirectUrlInput } from "./url";
+import { extractAwemeIdFromUrl, identifyDouyinInput, isDirectUrlInput } from "./url";
 
 function toUnixSeconds(value: string | null | undefined) {
   if (!value) {
@@ -29,7 +29,7 @@ export const douyinResolver: PlatformResolver = {
   label: DOUYIN_PLATFORM_LABEL,
   canHandle: (input) => identifyDouyinInput(input) !== null,
   async resolve(input: string, context?: ResolveContext) {
-    const found = identifyDouyinInput(input);
+    let found = identifyDouyinInput(input);
 
     if (!found) {
       throw new ResolveError("这个链接看起来不太对");
@@ -52,6 +52,12 @@ export const douyinResolver: PlatformResolver = {
         firstHopParams = new URL(targetUrl).searchParams;
       } catch {
         firstHopParams = null;
+      }
+
+      // 第一跳落点重新识别：分享用户主页的短链（/user/{sec_uid}）也走主页查询分支
+      const hop = identifyDouyinInput(targetUrl);
+      if (hop?.kind === "user_url" && hop.secUid) {
+        found = hop;
       }
     }
 
@@ -94,15 +100,13 @@ export const douyinResolver: PlatformResolver = {
       });
     }
 
-    // ---- 视频相关：短链 / 视频链接 / 裸 aweme_id ----
-    const awemeId = found.awemeId ?? targetUrl.match(/\/(?:video|share\/video)\/(\d{19})/)?.[1];
+    // ---- 作品相关：短链 / 作品链接（视频、图文及任何形态）/ 裸 aweme_id ----
+    // 作品 ID 通用提取（路径里 19 位纯数字段）；分享者解析只依赖 activity_info，
+    // 不因作品类型不认识或 ID 提取失败而中断
+    const awemeId = found.awemeId ?? extractAwemeIdFromUrl(targetUrl);
 
-    if (!awemeId) {
-      throw new ResolveError("这个链接暂时还解析不了");
-    }
-
-    // 裸 aweme_id 没有链接，用构造的视频地址兜底（打开视频/脱敏链接都可用）
-    const videoUrl = targetUrl || `${DOUYIN_VIDEO_PREFIX}${awemeId}`;
+    // 裸 aweme_id 没有链接，用构造的作品地址兜底（打开作品/脱敏链接都可用）
+    const contentUrl = targetUrl || (awemeId ? `${DOUYIN_VIDEO_PREFIX}${awemeId}` : "");
     const targetParams = targetUrl ? new URL(targetUrl).searchParams : null;
 
     // 分享者信息在 activity_info 里（新版分享链接才有），纯本地解析
@@ -114,7 +118,7 @@ export const douyinResolver: PlatformResolver = {
       noteId: awemeId,
       linkType: found.kind === "video_url" ? "video" : found.kind,
       sourceType,
-      cleanUrl: stripDouyinSharerParams(videoUrl),
+      cleanUrl: stripDouyinSharerParams(contentUrl),
       shareChannel: (firstHopParams ?? targetParams)?.get("tt_from") ?? undefined,
       shareTime: toUnixSeconds(activityInfo?.shareTime),
       shareEventId: activityInfo?.shareId,
@@ -139,7 +143,7 @@ export const douyinResolver: PlatformResolver = {
       return buildResult({
         userId: activityInfo.shareUserId,
         profileUrl: sharerProfileUrl,
-        targetUrl: videoUrl,
+        targetUrl: contentUrl,
         source: fromShortLink ? "shortlink" : "activity_info",
         algorithm: fromShortLink
           ? "从分享链接里找到"
@@ -151,7 +155,7 @@ export const douyinResolver: PlatformResolver = {
     // 老版分享/私信转发：链接里没有分享者信息
     return buildResult({
       userId: undefined,
-      targetUrl: videoUrl,
+      targetUrl: contentUrl,
       source: fromShortLink ? "shortlink" : found.kind === "aweme_id" ? "aweme_id" : "video",
       algorithm: "链接里没有分享者信息",
       shareUserIdReason:

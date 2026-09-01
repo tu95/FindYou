@@ -19,7 +19,7 @@ function formatShareTime(seconds?: number) {
 }
 
 const OPEN_CONTENT_LABEL: Record<string, string> = {
-  douyin: "打开视频",
+  douyin: "打开作品",
 };
 
 function DetailRows({ result }: { result: ResolveResult }) {
@@ -30,7 +30,7 @@ function DetailRows({ result }: { result: ResolveResult }) {
     result.userId ?? (
       <span className="text-black/60">
         {result.platformId === "douyin"
-          ? "—（这条抖音分享链接不含分享者信息，只能获取视频作者）"
+          ? "—（这条抖音分享链接不含分享者信息，只能获取作品作者）"
           : "—（网页/PC 分享链接不含 shareRedId/appuid，无法获取）"}
       </span>
     ),

@@ -3,7 +3,7 @@ import { ResolveError } from "@/lib/errors";
 import type { ResolveContext, SanitizeResult } from "../types";
 import { DOUYIN_PLATFORM_ID, DOUYIN_PLATFORM_LABEL } from "./constants";
 import { parseActivityInfo } from "./decode";
-import { identifyDouyinInput } from "./url";
+import { extractAwemeIdFromUrl, identifyDouyinInput } from "./url";
 
 // 抖音分享链接里跟"分享者身份"有关的参数：activity_info（含分享者 User ID）、u_code（分享者归属码）
 const SHARER_PARAMS = ["activity_info", "u_code"] as const;
@@ -71,9 +71,8 @@ export async function sanitizeDouyinUrl(
     fromShortLink,
   };
 
-  const awemeId =
-    found.awemeId ?? targetUrl.match(/\/(?:video|share\/video)\/(\d{19})/)?.[1] ?? undefined;
-  result.noteId = awemeId;
+  // 作品 ID 通用提取（视频/图文/未来形态），脱敏流程同样不依赖内容类型
+  result.noteId = found.awemeId ?? extractAwemeIdFromUrl(targetUrl);
 
   // activity_info 里的分享者 ID 可以本地解出（不需要再请求接口）
   try {
