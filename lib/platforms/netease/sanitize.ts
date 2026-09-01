@@ -76,6 +76,14 @@ function stripSharerParams(url: URL): { removed: string[] } {
   return { removed: [...removed] };
 }
 
+// 生成脱敏链接：抹掉 userid/uct2/uct（内容 id 保留），search 和 hash 都处理。
+// 查找结果里的“复制脱敏链接”也走这里，保证两条链路抹的是同一套参数。
+export function stripNeteaseSharerParams(rawUrl: string): string {
+  const url = parseNeteaseUrl(rawUrl);
+  stripSharerParams(url);
+  return url.toString();
+}
+
 export async function sanitizeNeteaseUrl(
   input: string,
   context?: ResolveContext,

@@ -7,7 +7,7 @@ import {
   NETEASE_PLATFORM_LABEL,
 } from "./constants";
 import { decodeLegacyUct, decodeUct2 } from "./decode";
-import { sanitizeNeteaseUrl } from "./sanitize";
+import { sanitizeNeteaseUrl, stripNeteaseSharerParams } from "./sanitize";
 import {
   findNeteaseUrl,
   getMergedSearchParams,
@@ -54,6 +54,7 @@ export const neteaseResolver: PlatformResolver = {
       return buildResult({
         userId: pageId,
         targetUrl,
+        cleanUrl: stripNeteaseSharerParams(targetUrl),
         source: "userid",
         algorithm: "链接里直接带着",
       });
@@ -65,6 +66,7 @@ export const neteaseResolver: PlatformResolver = {
       return buildResult({
         userId: userid,
         targetUrl,
+        cleanUrl: stripNeteaseSharerParams(targetUrl),
         source: fromShortLink ? "shortlink" : "userid",
         algorithm: fromShortLink ? "从分享链接里找到" : "链接里直接带着",
       });
@@ -77,6 +79,7 @@ export const neteaseResolver: PlatformResolver = {
       return buildResult({
         ...decoded,
         targetUrl,
+        cleanUrl: stripNeteaseSharerParams(targetUrl),
         source: fromShortLink ? "shortlink" : decoded.source,
         algorithm: fromShortLink ? "从分享链接里找到" : decoded.algorithm,
       });
@@ -89,6 +92,7 @@ export const neteaseResolver: PlatformResolver = {
       return buildResult({
         ...decoded,
         targetUrl,
+        cleanUrl: stripNeteaseSharerParams(targetUrl),
         source: fromShortLink ? "shortlink" : decoded.source,
         algorithm: fromShortLink ? "从分享链接里找到" : decoded.algorithm,
       });
